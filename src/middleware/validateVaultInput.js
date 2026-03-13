@@ -9,8 +9,6 @@ const validateVaultInput = (req, res, next) => {
         return res.status(400).json({ success: false, message: 'Valid data is required' });
     }
 
-    // We removed the 'owner' check here because authMiddleware handles it now!
-
     next();
 };
 

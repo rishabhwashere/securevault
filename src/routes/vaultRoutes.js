@@ -10,13 +10,10 @@ const {
   updateVaultEntry, 
   deleteVaultEntry 
 } = require('../controllers/vaultController');
-
-// CREATE & READ (Applies to all notes)
+console.log("Checking protect:", protect);
+console.log("Checking getAllVaultEntries:", getAllVaultEntries);
 router.get('/', protect, getAllVaultEntries);
-router.post('/', protect, validateVaultInput, createVaultEntry);
-
-// UPDATE & DELETE (Requires a specific note ID in the URL)
+router.post('/', protect, validateVaultInput, createVaultEntry)
 router.put('/:id', protect, updateVaultEntry);
 router.delete('/:id', protect, deleteVaultEntry);
-
 module.exports = router;
