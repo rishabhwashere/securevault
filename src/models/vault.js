@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 
 const vaultSchema = new mongoose.Schema(
   {
+   
+    title: { 
+      type: String,
+      default: 'Untitled Secret'
+    },
     data: {
       type: String,
       required: true
@@ -10,9 +15,14 @@ const vaultSchema = new mongoose.Schema(
       type: Number,
       required: true
     },
+   
+    isEncrypted: { 
+      type: Boolean,
+      default: false
+    },
     storedAt: {
       type: Date,
-      required: true
+      default: Date.now // This automatically sets the current date!
     }
   },
   {
