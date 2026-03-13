@@ -5,15 +5,18 @@ const activityLogSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true
+      required: true,
+      index: true
     },
     action: {
       type: String,
-      required: true
+      required: true,
+      index: true
     },
     vault: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Vault'
+      ref: 'Vault',
+      index: { sparse: true }
     },
     metadata: {
       type: Object,
@@ -25,5 +28,8 @@ const activityLogSchema = new mongoose.Schema(
     collection: 'activity_logs'
   }
 );
+
+activityLogSchema.index({ user: 1, createdAt: -1 });
+activityLogSchema.index({ vault: 1, createdAt: -1 });
 
 module.exports = mongoose.model('ActivityLog', activityLogSchema);

@@ -2,35 +2,51 @@ require('dotenv').config();
 const express = require('express');
 const connectDB = require('./config/db');
 
-// --- 1. IMPORT YOUR ROUTES HERE ---
+// Import Routes
 const vaultRoutes = require('./routes/vaultRoutes');
-const userRoutes = require('./routes/userRoutes'); // <-- Added line
+const userRoutes = require('./routes/UserRoutes');
+const activityRoutes = require('./routes/activityRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Middleware
 app.use(express.json());
 
-app.get('/', (req, res) => {
+// Database Connection
+connectDB();
+
+// Test Endpoint (from GitHub version)
+app.post('/api/test', (req, res) => {
   res.json({
-    message: 'Secure Vault API Server is running',
-    version: '1.0.0',
+    message: 'Test endpoint working',
+    body: req.body
+  });
+});
+
+// Health Check Endpoint
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: 'Secure Vault API is running',
+    version: '2.0.0',
     endpoints: {
-      preview: 'POST /api/vault/preview',
-      register: 'POST /api/users/register'
+      users: '/api/users',
+      vault: '/api/vault',
+      activity: '/api/activity'
     }
   });
 });
 
-connectDB();
-
-// --- 2. MOUNT YOUR ROUTES HERE ---
+// Mount Routes
+app.use('/api/users', userRoutes);
 app.use('/api/vault', vaultRoutes);
-app.use('/api/users', userRoutes); // <-- Added line
+app.use('/api/activity', activityRoutes);
 
+// Start Server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/`);
-  console.log(`Vault endpoint: http://localhost:${PORT}/api/vault/preview`);
-  console.log(`User endpoint: http://localhost:${PORT}/api/users/register`);
+  console.log(` Server is running on port ${PORT}`);
+  console.log(`Health Check: http://localhost:${PORT}/`);
+  console.log(` Users API: http://localhost:${PORT}/api/users`);
+  console.log(` Vault API: http://localhost:${PORT}/api/vault`);
+  console.log(` Activity API: http://localhost:${PORT}/api/activity`);
 });

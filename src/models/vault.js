@@ -2,31 +2,33 @@ const mongoose = require('mongoose');
 
 const vaultSchema = new mongoose.Schema(
   {
-   
-    title: { 
+    title: {
       type: String,
-      default: 'Untitled Secret'
+      required: true,
+      trim: true
     },
     data: {
       type: String,
       required: true
     },
-    length: {
-      type: Number,
+    category: {
+      type: String,
+      default: 'general'
+    },
+    tags: [
+      {
+        type: String
+      }
+    ],
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
       required: true
-    },
-   
-    isEncrypted: { 
-      type: Boolean,
-      default: false
-    },
-    storedAt: {
-      type: Date,
-      default: Date.now // This automatically sets the current date!
     }
   },
   {
-    collection: 'vault_data' 
+    timestamps: true,
+    collection: 'vault_data'
   }
 );
 

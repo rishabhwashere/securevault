@@ -1,54 +1,67 @@
+const Vault = require('../models/vault'); // Note: Ensure 'vault' case matches your file name
+const ActivityLog = require('../models/activitylog');
 
-const Vault = require('../models/vault'); 
-
-const previewVaultData = async (req, res) => {
+const createVaultEntry = async (req, res) => {
   try {
-    const { data } = req.body;
+    const { title, data, category, tags, owner } = req.body;
 
     const vaultEntry = new Vault({
-      title: req.body.title || 'Untitled Secret', 
-      data: data,
-      length: data.length,
-      isEncrypted: false,
-      storedAt: new Date()
+      title,
+      data,
+      category,
+      tags,
+      owner
     });
 
     await vaultEntry.save();
 
+    // Automaticaly log the activity
+    await ActivityLog.create({
+      user: owner,
+      action: 'VAULT_CREATED',
+      vault: vaultEntry._id,
+      metadata: {
+        title: title
+      }
+    });
+
     res.status(201).json({
-      status: 'stored',
-      id: vaultEntry._id,
-      title: vaultEntry.title,
-      originalLength: vaultEntry.length,
-      note: 'Data stored successfully'
+      success: true,
+      message: 'Vault entry created successfully',
+      data: vaultEntry
     });
 
   } catch (error) {
+    console.error(error);
     res.status(500).json({
-      status: 'error',
-      message: 'Failed to store vault data'
+      success: false,
+      message: error.message
     });
   }
 };
 
-const getAllVaultData = async (req, res) => {
+const getAllVaultEntries = async (req, res) => {
   try {
-    const vaults = await Vault.find().sort({ storedAt: -1 }); 
+    const vaults = await Vault.find()
+      .populate('owner', 'name email') // Only show name and email of the owner
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
-      status: 'success',
-      totalItems: vaults.length,
+      success: true,
+      count: vaults.length,
       data: vaults
     });
+
   } catch (error) {
+    console.error(error);
     res.status(500).json({
-      status: 'error',
-      message: 'Failed to retrieve vault data'
+      success: false,
+      message: error.message
     });
   }
 };
 
 module.exports = {
-  previewVaultData,
-  getAllVaultData 
+  createVaultEntry,
+  getAllVaultEntries
 };
