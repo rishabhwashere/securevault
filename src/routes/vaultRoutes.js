@@ -1,21 +1,22 @@
-console.log("routes loaded");
 const express = require('express');
 const router = express.Router();
+
 const validateVaultInput = require('../middleware/validateVaultInput');
-<<<<<<< HEAD
-const { previewVaultData, getAllVaultData } = require('../controllers/vaultController');
-router.post('/preview', validateVaultInput, previewVaultData);
-router.get('/', getAllVaultData);
+const protect = require('../middleware/authMiddleware');
 
-=======
-
-const {
-  createVaultEntry,
-  getAllVaultEntries
+const { 
+  createVaultEntry, 
+  getAllVaultEntries, 
+  updateVaultEntry, 
+  deleteVaultEntry 
 } = require('../controllers/vaultController');
 
-router.post('/', validateVaultInput, createVaultEntry);
-router.get('/', getAllVaultEntries);
+// CREATE & READ (Applies to all notes)
+router.get('/', protect, getAllVaultEntries);
+router.post('/', protect, validateVaultInput, createVaultEntry);
 
->>>>>>> 67b2b6df99205598c89ca9a27547f3cb2a9cc876
+// UPDATE & DELETE (Requires a specific note ID in the URL)
+router.put('/:id', protect, updateVaultEntry);
+router.delete('/:id', protect, deleteVaultEntry);
+
 module.exports = router;

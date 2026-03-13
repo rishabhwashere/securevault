@@ -1,30 +1,17 @@
-const mongoose = require('mongoose');
-
 const validateVaultInput = (req, res, next) => {
-  const { title, data, owner } = req.body;
+    const { title, data } = req.body;
 
-  if (!title || typeof title !== 'string' || title.trim().length === 0) {
-    return res.status(400).json({
-      success: false,
-      message: 'Valid "title" is required'
-    });
-  }
+    if (!title || typeof title !== 'string') {
+        return res.status(400).json({ success: false, message: 'Valid title is required' });
+    }
 
-  if (!data || typeof data !== 'string' || data.trim().length === 0) {
-    return res.status(400).json({
-      success: false,
-      message: 'Valid "data" is required'
-    });
-  }
+    if (!data || typeof data !== 'string') {
+        return res.status(400).json({ success: false, message: 'Valid data is required' });
+    }
 
-  if (!owner || !mongoose.Types.ObjectId.isValid(owner)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Valid "owner" ObjectId is required'
-    });
-  }
+    // We removed the 'owner' check here because authMiddleware handles it now!
 
-  next();
+    next();
 };
 
 module.exports = validateVaultInput;
