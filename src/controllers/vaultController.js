@@ -3,17 +3,27 @@ const ActivityLog = require('../models/activitylog');
 
 const createVaultEntry = async (req, res) => {
   try {
-    const { title, data, category, tags, owner } = req.body;
+    console.log("FILE DATA:", req.file); 
+    console.log("BODY DATA:", req.body);
 
+
+    const { title, data, category, tags,  } = req.body;
+    const filePath = req.file ? (req.file.secure_url || req.file.path) : null;
+    if (!filePath) {
+        return res.status(400).json({ success: false, message: "No file was received by the server." });
+    }
     const vaultEntry = new Vault({
       title,
       data,
       category,
       tags,
-      owner: req.user._id
+      owner: req.user._id,
+      filePath: filePath
     });
 
     await vaultEntry.save();
+    res.status(201).json({ success: true, data: vaultEntry });
+
     await ActivityLog.create({
       user: req.user._id,
       action: 'VAULT_CREATED',
@@ -30,7 +40,7 @@ const createVaultEntry = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("UPLOAD ERROR:", error);
     res.status(500).json({
       success: false,
       message: error.message

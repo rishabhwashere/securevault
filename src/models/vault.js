@@ -20,6 +20,10 @@ const vaultSchema = new mongoose.Schema(
         type: String
       }
     ],
+    filePath: {
+    type: String,
+    default: null
+    },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

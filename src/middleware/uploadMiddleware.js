@@ -1,20 +1,34 @@
 const multer = require('multer');
-const path = require('path');
+const cloudinary = require('cloudinary').v2; // We keep v2 here for logging in
+const multerCloudinary = require('multer-storage-cloudinary');
+require('dotenv').config();
 
-// Configure how and where Multer saves the file
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    // Save it to our new 'uploads' folder
-    cb(null, 'uploads/'); 
-  },
-  filename: function (req, file, cb) {
-    // Give the file a highly secure, unique name so users don't overwrite each other's files
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'vault-file-' + uniqueSuffix + path.extname(file.originalname));
-  }
+// 1. Log in to Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Initialize Multer with our storage rules
+// 2. Define the storage rules
+const storageOptions = {
+  cloudinary: require('cloudinary'), // <--- THE FIX! We hand it the base package, not .v2!
+  params: {
+    folder: 'vaultx_uploads', 
+    allowed_formats: ['jpg', 'jpeg', 'png', 'pdf'], 
+    resource_type: 'auto' 
+  },
+};
+
+// 3. The Bulletproof Check! 
+let storage;
+if (multerCloudinary.CloudinaryStorage) {
+  storage = new multerCloudinary.CloudinaryStorage(storageOptions);
+} else {
+  storage = multerCloudinary(storageOptions);
+}
+
+// 4. Hand the engine to Multer
 const upload = multer({ storage: storage });
 
 module.exports = upload;

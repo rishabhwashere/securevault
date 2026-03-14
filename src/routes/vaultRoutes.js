@@ -3,7 +3,7 @@ const router = express.Router();
 
 const validateVaultInput = require('../middleware/validateVaultInput');
 const protect = require('../middleware/authMiddleware');
-
+const upload = require('../middleware/uploadMiddleware');
 const { 
   createVaultEntry, 
   getAllVaultEntries, 
@@ -13,7 +13,7 @@ const {
 console.log("Checking protect:", protect);
 console.log("Checking getAllVaultEntries:", getAllVaultEntries);
 router.get('/', protect, getAllVaultEntries);
-router.post('/', protect, validateVaultInput, createVaultEntry)
+router.post('/', protect, upload.single('file'), validateVaultInput, createVaultEntry);
 router.put('/:id', protect, updateVaultEntry);
 router.delete('/:id', protect, deleteVaultEntry);
 module.exports = router;
