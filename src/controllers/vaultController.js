@@ -6,10 +6,10 @@ const createVaultEntry = async (req, res) => {
     console.log("FILE DATA:", req.file); 
     console.log("BODY DATA:", req.body);
 
-
     const { title, data, category, tags,  } = req.body;
     const filePath = req.file ? (req.file.secure_url || req.file.path) : null;
-    if (!filePath) {
+    
+   if (!filePath) {
         return res.status(400).json({ success: false, message: "No file was received by the server." });
     }
     const vaultEntry = new Vault({
@@ -47,7 +47,6 @@ const createVaultEntry = async (req, res) => {
     });
   }
 };
-
 const getAllVaultEntries = async (req, res) => {
   try {
     const vaults = await Vault.find({ owner: req.user._id })
