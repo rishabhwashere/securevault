@@ -1,14 +1,19 @@
-console.log("routes loaded");
 const express = require('express');
 const router = express.Router();
+
 const validateVaultInput = require('../middleware/validateVaultInput');
-
-const {
-  createVaultEntry,
-  getAllVaultEntries
+const protect = require('../middleware/authMiddleware');
+const upload = require('../middleware/uploadMiddleware');
+const { 
+  createVaultEntry, 
+  getAllVaultEntries, 
+  updateVaultEntry, 
+  deleteVaultEntry 
 } = require('../controllers/vaultController');
-
-router.post('/', validateVaultInput, createVaultEntry);
-router.get('/', getAllVaultEntries);
-
+console.log("Checking protect:", protect);
+console.log("Checking getAllVaultEntries:", getAllVaultEntries);
+router.get('/', protect, getAllVaultEntries);
+router.post('/', protect, upload.single('file'), validateVaultInput, createVaultEntry);
+router.put('/:id', protect, updateVaultEntry);
+router.delete('/:id', protect, deleteVaultEntry);
 module.exports = router;

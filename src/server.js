@@ -1,17 +1,21 @@
 require('dotenv').config();
-const activityRoutes = require('./routes/activityRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 const express = require('express');
 const connectDB = require('./config/db');
 
+const authRoutes = require('./routes/authRoutes');
 const vaultRoutes = require('./routes/vaultRoutes');
 const userRoutes = require('./routes/UserRoutes');
+const activityRoutes = require('./routes/activityRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-app.post('api/test', (req, res) => {
+connectDB();
+
+app.post('/api/test', (req, res) => {
   res.json({
     message: 'Test endpoint working',
     body: req.body
@@ -24,21 +28,26 @@ app.get('/', (req, res) => {
     version: '2.0.0',
     endpoints: {
       users: '/api/users',
-      vault: '/api/vault'
+      vault: '/api/vault',
+      activity: '/api/activity'
     }
   });
 });
 
-
-connectDB();
-
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/vault', vaultRoutes);
 app.use('/api/activity', activityRoutes);
+app.use('/api/upload', uploadRoutes);
 
 app.listen(PORT, () => {
   console.log(` Server is running on port ${PORT}`);
-  console.log(` Health Check: http://localhost:${PORT}/`);
-  console.log(` Users API: http://localhost:${PORT}/api/users`);
-  console.log(` Vault API: http://localhost:${PORT}/api/vault`);
+  console.log(` Health Check:  http://localhost:${PORT}/`);
+  console.log(` Auth Register: http://localhost:${PORT}/api/auth/register`);
+  console.log(` Auth Login:    http://localhost:${PORT}/api/auth/login`);
+  console.log(` Users API:     http://localhost:${PORT}/api/users`);
+  console.log(` Vault API:      http://localhost:${PORT}/api/vault`);
+  console.log(` Upload API:    http://localhost:${PORT}/api/upload`);
+  console.log(` Activity API:  http://localhost:${PORT}/api/activity`);
+  
 });

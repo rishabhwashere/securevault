@@ -7,23 +7,23 @@ const vaultSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
-
     data: {
       type: String,
       required: true
     },
-
     category: {
       type: String,
       default: 'general'
     },
-
     tags: [
       {
         type: String
       }
     ],
-
+    filePath: {
+    type: String,
+    default: null
+    },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

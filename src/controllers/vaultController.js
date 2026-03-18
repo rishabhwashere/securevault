@@ -1,23 +1,31 @@
-const Vault = require('../models/Vault');
+const Vault = require('../models/vault'); 
 const ActivityLog = require('../models/activitylog');
 
 const createVaultEntry = async (req, res) => {
   try {
-    const { title, data, category, tags, owner } = req.body;
+    console.log("FILE DATA:", req.file); 
+    console.log("BODY DATA:", req.body);
 
+
+    const { title, data, category, tags,  } = req.body;
+    const filePath = req.file ? (req.file.secure_url || req.file.path) : null;
+    if (!filePath) {
+        return res.status(400).json({ success: false, message: "No file was received by the server." });
+    }
     const vaultEntry = new Vault({
       title,
       data,
-      length: data.length,
       category,
       tags,
-      owner
+      owner: req.user._id,
+      filePath: filePath
     });
 
     await vaultEntry.save();
+    res.status(201).json({ success: true, data: vaultEntry });
 
     await ActivityLog.create({
-      user: owner,
+      user: req.user._id,
       action: 'VAULT_CREATED',
       vault: vaultEntry._id,
       metadata: {
@@ -32,7 +40,7 @@ const createVaultEntry = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("UPLOAD ERROR:", error);
     res.status(500).json({
       success: false,
       message: error.message
@@ -42,8 +50,8 @@ const createVaultEntry = async (req, res) => {
 
 const getAllVaultEntries = async (req, res) => {
   try {
-    const vaults = await Vault.find()
-      .populate('owner')
+    const vaults = await Vault.find({ owner: req.user._id })
+      .populate('owner', 'name email') 
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -60,8 +68,57 @@ const getAllVaultEntries = async (req, res) => {
     });
   }
 };
+const updateVaultEntry = async (req, res) => {
+  try {
+    
+    let vaultEntry = await Vault.findById(req.params.id);
+
+    if (!vaultEntry) {
+      return res.status(404).json({ success: false, message: 'Vault entry not found' });
+    }
+
+  
+    if (vaultEntry.owner.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ success: false, message: 'Not authorized to update this entry' });
+    }
+
+    
+    vaultEntry = await Vault.findByIdAndUpdate(
+      req.params.id, 
+      req.body, 
+      { new: true, runValidators: true } 
+    );
+
+    res.status(200).json({ success: true, data: vaultEntry });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+const deleteVaultEntry = async (req, res) => {
+  try {
+    const vaultEntry = await Vault.findById(req.params.id);
+
+    if (!vaultEntry) {
+      return res.status(404).json({ success: false, message: 'Vault entry not found' });
+    }
+
+    
+    if (vaultEntry.owner.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ success: false, message: 'Not authorized to delete this entry' });
+    }
+    await vaultEntry.deleteOne();
+
+    res.status(200).json({ success: true, message: 'Vault entry deleted successfully' });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 module.exports = {
   createVaultEntry,
-  getAllVaultEntries
+  getAllVaultEntries,
+  updateVaultEntry,
+  deleteVaultEntry
 };
