@@ -13,7 +13,7 @@ const {
 console.log("Checking protect:", protect);
 console.log("Checking getAllVaultEntries:", getAllVaultEntries);
 router.get('/', protect, getAllVaultEntries);
-router.post('/', protect, upload.single('file'), validateVaultInput, createVaultEntry);
+router.post('/', protect, upload.array('files', 10), validateVaultInput, createVaultEntry);
 router.put('/:id', protect, updateVaultEntry);
 router.delete('/:id', protect, deleteVaultEntry);
 module.exports = router;
