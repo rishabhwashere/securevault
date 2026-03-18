@@ -1,10 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const protect  = require('../middleware/authMiddleware'); // Need this to secure the route!
-const upload = require('../middleware/uploadMiddleware');    // Your multer config
+const protect  = require('../middleware/authMiddleware'); 
+const upload = require('../middleware/uploadMiddleware');    
 
-// @desc    Upload a file locally
-// @route   POST /api/upload
 router.post('/', protect, upload.single('document'), (req, res) => {
     try {
         if (!req.file) {
