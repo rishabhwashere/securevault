@@ -1,6 +1,7 @@
 require('dotenv').config();
 const uploadRoutes = require('./routes/uploadRoutes');
 const express = require('express');
+const path = require('path');
 const connectDB = require('./config/db');
 
 const authRoutes = require('./routes/authRoutes');
@@ -10,8 +11,10 @@ const activityRoutes = require('./routes/activityRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const publicDir = path.join(__dirname, '..', 'public');
 
 app.use(express.json());
+app.use(express.static(publicDir));
 
 connectDB();
 
@@ -32,6 +35,10 @@ app.get('/', (req, res) => {
       activity: '/api/activity'
     }
   });
+});
+
+app.get('/app', (req, res) => {
+  res.sendFile(path.join(publicDir, 'index.html'));
 });
 
 app.use('/api/auth', authRoutes);

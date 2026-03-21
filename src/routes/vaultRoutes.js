@@ -10,8 +10,7 @@ const {
   updateVaultEntry, 
   deleteVaultEntry 
 } = require('../controllers/vaultController');
-console.log("Checking protect:", protect);
-console.log("Checking getAllVaultEntries:", getAllVaultEntries);
+
 router.get('/', protect, getAllVaultEntries);
 router.post('/', protect, upload.array('files', 10), validateVaultInput, createVaultEntry);
 router.put('/:id', protect, updateVaultEntry);
