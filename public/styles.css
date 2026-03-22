@@ -87,6 +87,10 @@ button {
   align-content: start;
 }
 
+.auth-heading {
+  text-align: center;
+}
+
 .auth-copy {
   margin: 10px 0 0;
   color: var(--muted);
@@ -94,8 +98,11 @@ button {
 }
 
 .auth-switcher {
-  display: inline-flex;
+  display: flex;
   gap: 10px;
+  justify-content: center;
+  width: 100%;
+  justify-self: center;
 }
 
 .auth-form h3 {

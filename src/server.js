@@ -49,7 +49,7 @@ app.use('/api/upload', uploadRoutes);
 
 app.listen(PORT, () => {
   console.log(` Server is running on port ${PORT}`);
-  console.log(` Health Check:  http://localhost:${PORT}/`);
+  console.log(` VaultX Home:   http://localhost:${PORT}/`);
   console.log(` Auth Register: http://localhost:${PORT}/api/auth/register`);
   console.log(` Auth Login:    http://localhost:${PORT}/api/auth/login`);
   console.log(` Users API:     http://localhost:${PORT}/api/users`);

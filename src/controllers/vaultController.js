@@ -3,9 +3,6 @@ const ActivityLog = require('../models/activitylog');
 
 const createVaultEntry = async (req, res) => {
   try {
-    // console.log("FILE DATA:", req.file); 
-    // console.log("BODY DATA:", req.body);
-
     const { title, data, category, tags,  } = req.body;
   
     let uploadedFiles = [];
@@ -13,14 +10,7 @@ const createVaultEntry = async (req, res) => {
     if (req.files && req.files.length > 0) {
       uploadedFiles = req.files.map(file => file.secure_url || file.path);
     }
-  
-  
-  
-    //   const filePath = req.files ? (req.files.secure_url || req.file.path) : null;
-    
-  //  if (!filePath) {
-  //       return res.status(400).json({ success: false, message: "No file was received by the server." });
-  //   }
+
     const vaultEntry = new Vault({
       title,
       data,
