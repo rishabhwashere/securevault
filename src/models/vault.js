@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { encrypt } = require('../Utils/encryption'); 
 
 const vaultSchema = new mongoose.Schema(
   {
@@ -9,7 +10,11 @@ const vaultSchema = new mongoose.Schema(
     },
     data: {
       type: String,
-      required: true
+      required: true,
+      set: (value) => {
+        if (value === undefined || value === null) return value;
+        return encrypt(value); 
+      }
     },
     category: {
       type: String,
@@ -21,8 +26,8 @@ const vaultSchema = new mongoose.Schema(
       }
     ],
     filePath: {
-    type: [String],
-    default: []
+      type: [String],
+      default: []
     },
     owner: {
       type: mongoose.Schema.Types.ObjectId,

@@ -16,8 +16,6 @@ const publicDir = path.join(__dirname, '..', 'public');
 app.use(express.json());
 app.use(express.static(publicDir));
 
-connectDB();
-
 app.post('/api/test', (req, res) => {
   res.json({
     message: 'Test endpoint working',
@@ -47,14 +45,24 @@ app.use('/api/vault', vaultRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/upload', uploadRoutes);
 
-app.listen(PORT, () => {
-  console.log(` Server is running on port ${PORT}`);
-  console.log(` VaultX Home:   http://localhost:${PORT}/`);
-  console.log(` Auth Register: http://localhost:${PORT}/api/auth/register`);
-  console.log(` Auth Login:    http://localhost:${PORT}/api/auth/login`);
-  console.log(` Users API:     http://localhost:${PORT}/api/users`);
-  console.log(` Vault API:      http://localhost:${PORT}/api/vault`);
-  console.log(` Upload API:    http://localhost:${PORT}/api/upload`);
-  console.log(` Activity API:  http://localhost:${PORT}/api/activity`);
-  
-});
+async function startServer() {
+  try {
+    const dbConnection = await connectDB();
+
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+      console.log(`Connected database: ${dbConnection.name}`);
+      console.log(`VaultX Home:   http://localhost:${PORT}/`);
+      console.log(`Auth Register: http://localhost:${PORT}/api/auth/register`);
+      console.log(`Auth Login:    http://localhost:${PORT}/api/auth/login`);
+      console.log(`Users API:     http://localhost:${PORT}/api/users`);
+      console.log(`Vault API:     http://localhost:${PORT}/api/vault`);
+      console.log(`Upload API:    http://localhost:${PORT}/api/upload`);
+      console.log(`Activity API:  http://localhost:${PORT}/api/activity`);
+    });
+  } catch (error) {
+    process.exit(1);
+  }
+}
+
+startServer();

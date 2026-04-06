@@ -5,6 +5,7 @@ import {
   getElements,
   populateVaultForm,
   renderSession,
+  renderVaultSummary,
   renderViewMode,
   renderVaultEntries,
   resetVaultForm,
@@ -12,6 +13,7 @@ import {
 } from './ui.js';
 
 const elements = getElements();
+const NEW_USER_EMAIL_KEY = 'vaultx-new-user-email';
 
 function api() {
   return createApi(state.token);
@@ -20,12 +22,14 @@ function api() {
 async function refreshVault() {
   if (!state.token) {
     state.vaultEntries = [];
+    renderVaultSummary();
     renderVaultEntries({ onEdit: handleEditVault, onDelete: handleDeleteVault });
     return;
   }
 
   const response = await api().getVaultEntries();
   state.vaultEntries = response.data || [];
+  renderVaultSummary();
   renderVaultEntries({ onEdit: handleEditVault, onDelete: handleDeleteVault });
 }
 
@@ -49,7 +53,8 @@ async function handleRegister(event) {
 
   try {
     const response = await api().register(payload);
-    setFeedback(`Welcome, ${response.user.name}! Your account has been created.`);
+    setFeedback(`Account created for ${response.user.name}.`);
+    sessionStorage.setItem(NEW_USER_EMAIL_KEY, payload.email);
     elements.registerForm.reset();
     elements.showLoginButton.click();
   } catch (error) {
@@ -64,10 +69,15 @@ async function handleLogin(event) {
   const payload = Object.fromEntries(formData.entries());
 
   try {
+    setFeedback('Signing in...');
     const response = await api().login(payload);
+    const isNewUserLogin = sessionStorage.getItem(NEW_USER_EMAIL_KEY) === payload.email;
     setSession(response.token, response.user);
     await refreshAll();
-    setFeedback(`Welcome Back, ${response.user.name}!`);
+    setFeedback(`${isNewUserLogin ? 'Welcome' : 'Welcome back'}, ${response.user.name}.`);
+    if (isNewUserLogin) {
+      sessionStorage.removeItem(NEW_USER_EMAIL_KEY);
+    }
     elements.loginForm.reset();
   } catch (error) {
     setFeedback(error.message, 'error');
@@ -92,6 +102,13 @@ async function handleVaultSubmit(event) {
   rawTags.forEach((tag) => formData.append('tags', tag));
 
   try {
+    renderVaultSummary({
+      title: state.editingId ? 'Updating' : 'Saving',
+      copy: state.editingId
+        ? 'Please wait...'
+        : 'Please wait...'
+    });
+
     if (state.editingId) {
       const updatePayload = {
         title: formData.get('title'),
@@ -101,10 +118,10 @@ async function handleVaultSubmit(event) {
       };
 
       await api().updateVaultEntry(state.editingId, updatePayload);
-      setFeedback('Vault entry updated successfully.');
+      setFeedback('Vault entry updated.');
     } else {
       await api().createVaultEntry(formData);
-      setFeedback('Vault entry created successfully.');
+      setFeedback('Vault entry created.');
     }
 
     resetVaultForm();
@@ -116,7 +133,7 @@ async function handleVaultSubmit(event) {
 
 function handleEditVault(entry) {
   populateVaultForm(entry);
-  setFeedback(`Editing "${entry.title}". Save the form to apply changes.`);
+  setFeedback(`Editing "${entry.title}".`);
 }
 
 async function handleDeleteVault(entry) {
@@ -129,6 +146,10 @@ async function handleDeleteVault(entry) {
   if (!shouldDelete) return;
 
   try {
+    renderVaultSummary({
+      title: 'Deleting',
+      copy: `"${entry.title}"`
+    });
     await api().deleteVaultEntry(entry._id);
     setFeedback('Vault entry deleted successfully.');
     if (state.editingId === entry._id) {
@@ -145,8 +166,9 @@ function handleLogout() {
   resetVaultForm();
   renderViewMode();
   renderSession();
+  renderVaultSummary();
   renderVaultEntries({ onEdit: handleEditVault, onDelete: handleDeleteVault });
-  setFeedback('You have been logged out.');
+  setFeedback('Logged out.');
 }
 
 function bindEvents() {
@@ -164,6 +186,7 @@ async function bootstrap() {
   bindEvents();
   renderViewMode();
   renderSession();
+  renderVaultSummary();
   renderVaultEntries({ onEdit: handleEditVault, onDelete: handleDeleteVault });
 
   try {

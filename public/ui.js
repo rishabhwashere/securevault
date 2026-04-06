@@ -10,6 +10,12 @@ const logoutButton = $('#logout-button');
 const vaultList = $('#vault-list');
 const vaultTemplate = $('#vault-card-template');
 const vaultSubmitButton = $('#vault-submit-button');
+const welcomeHeading = $('#welcome-heading');
+const welcomeCopy = $('#welcome-copy');
+const vaultCount = $('#vault-count');
+const vaultSummary = $('#vault-summary');
+const vaultStatus = $('#vault-status');
+const vaultStatusCopy = $('#vault-status-copy');
 
 function formatDate(value) {
   if (!value) return 'Unknown time';
@@ -52,6 +58,18 @@ export function bindSectionNav() {
 
 export function renderSession() {
   logoutButton.hidden = !state.user;
+
+  if (!state.user) {
+    if (welcomeHeading) welcomeHeading.textContent = 'Welcome back';
+    if (welcomeCopy) welcomeCopy.textContent = 'Manage your vault entries here.';
+    return;
+  }
+
+  const firstName = String(state.user.name || 'there').split(' ')[0];
+  welcomeHeading.textContent = `Welcome, ${firstName}`;
+  welcomeCopy.textContent = state.vaultEntries.length
+    ? 'Your entries are loaded.'
+    : 'Create your first vault entry.';
 }
 
 export function renderViewMode() {
@@ -64,11 +82,13 @@ export function renderVaultEntries({ onEdit, onDelete }) {
   vaultList.innerHTML = '';
 
   if (!state.user) {
+    renderVaultSummary();
     vaultList.append(createEmptyState('Log in to load vault entries.'));
     return;
   }
 
   if (!state.vaultEntries.length) {
+    renderVaultSummary();
     vaultList.append(createEmptyState('No vault entries yet. Create the first one from the form above.'));
     return;
   }
@@ -117,6 +137,8 @@ export function renderVaultEntries({ onEdit, onDelete }) {
 
     vaultList.append(fragment);
   });
+
+  renderVaultSummary();
 }
 
 export function setFeedback(message, type = 'success') {
@@ -139,6 +161,45 @@ export function setFeedback(message, type = 'success') {
   banner.className = `feedback-banner ${type === 'error' ? 'is-error' : 'is-success'}`;
 }
 
+export function renderVaultSummary(statusOverride = null) {
+  const count = state.vaultEntries.length;
+  const hasEntries = count > 0;
+  const latestEntry = hasEntries ? state.vaultEntries[0] : null;
+
+  if (vaultCount) {
+    vaultCount.textContent = `${count} ${count === 1 ? 'entry' : 'entries'}`;
+  }
+
+  if (vaultSummary) {
+    vaultSummary.textContent = hasEntries
+      ? `Latest: "${latestEntry.title}"`
+      : 'Your saved entries will appear here.';
+  }
+
+  if (statusOverride) {
+    vaultStatus.textContent = statusOverride.title;
+    vaultStatusCopy.textContent = statusOverride.copy;
+    return;
+  }
+
+  if (!state.user) {
+    vaultStatus.textContent = 'Signed out';
+    vaultStatusCopy.textContent = 'Sign in to view your entries.';
+    return;
+  }
+
+  if (state.editingId) {
+    vaultStatus.textContent = 'Editing';
+    vaultStatusCopy.textContent = 'Update the fields and save.';
+    return;
+  }
+
+  vaultStatus.textContent = hasEntries ? 'Synced' : 'Ready';
+  vaultStatusCopy.textContent = hasEntries
+    ? 'Your entries are up to date.'
+    : 'No activity yet.';
+}
+
 export function populateVaultForm(entry) {
   const form = $('#vault-form');
 
@@ -149,6 +210,7 @@ export function populateVaultForm(entry) {
 
   state.editingId = entry._id;
   vaultSubmitButton.textContent = 'Update vault entry';
+  renderVaultSummary();
 }
 
 export function resetVaultForm() {
@@ -156,6 +218,7 @@ export function resetVaultForm() {
   form.reset();
   state.editingId = null;
   vaultSubmitButton.textContent = 'Save vault entry';
+  renderVaultSummary();
 }
 
 export function getElements() {

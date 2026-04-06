@@ -11,12 +11,14 @@
 </head>
 <body>
   <div class="brand-mark">VaultX</div>
+  <div class="ambient-orb ambient-orb-left"></div>
+  <div class="ambient-orb ambient-orb-right"></div>
 
   <section id="auth-view" class="auth-view">
     <div class="auth-shell">
       <section class="auth-stage">
         <div class="auth-heading">
-          <p class="auth-copy">Sign in or create an account to access your secure vault.</p>
+          <p class="auth-copy">Sign in or create an account to continue.</p>
         </div>
 
         <div class="auth-switcher">
@@ -62,11 +64,25 @@
   <div id="app-view" class="app-view" hidden>
     <main class="content">
       <header class="topbar">
-        <div></div>
+        <div class="topbar-intro">
+          <h2 id="welcome-heading">Welcome back</h2>
+          <p id="welcome-copy" class="topbar-copy">Manage your vault entries here.</p>
+        </div>
         <button id="logout-button" class="ghost-button topbar-logout" type="button">Log out</button>
       </header>
 
       <section id="app-feedback-banner" class="feedback-banner" hidden></section>
+
+      <section class="hero-strip">
+        <article class="hero-card hero-card-primary">
+          <h3 id="vault-count">0 entries</h3>
+          <p id="vault-summary" class="hero-copy">Your saved entries will appear here.</p>
+        </article>
+        <article class="hero-card">
+          <h3 id="vault-status">Ready</h3>
+          <p id="vault-status-copy" class="hero-copy">No activity yet.</p>
+        </article>
+      </section>
 
       <section class="grid-layout">
         <div class="stack">
