@@ -18,45 +18,36 @@ export function createApi(token) {
 
   return {
     register: (body) =>
-      request('/api/auth/register', {
-        method: 'POST',
-        headers: jsonHeaders,
-        body: JSON.stringify(body)
-      }),
+      request('/api/auth/register', { method: 'POST', headers: jsonHeaders, body: JSON.stringify(body) }),
 
     login: (body) =>
-      request('/api/auth/login', {
+      request('/api/auth/login', { method: 'POST', headers: jsonHeaders, body: JSON.stringify(body) }),
+
+    getVaultEntries: () =>
+      request('/api/vault', { headers: authHeaders }),
+
+    createVaultEntry: (formData) =>
+      request('/api/vault', { method: 'POST', headers: authHeaders, body: formData }),
+
+    updateVaultEntry: (id, body) =>
+      request(`/api/vault/${id}`, { method: 'PUT', headers: { ...jsonHeaders, ...authHeaders }, body: JSON.stringify(body) }),
+
+    deleteVaultEntry: (id) =>
+      request(`/api/vault/${id}`, { method: 'DELETE', headers: authHeaders }),
+
+    // --- NEW SHARE ENDPOINTS ---
+    generateShareLink: (vaultId, body) =>
+      request(`/api/share/generate/${vaultId}`, {
+        method: 'POST',
+        headers: { ...jsonHeaders, ...authHeaders },
+        body: JSON.stringify(body)
+      }),
+
+    accessShareLink: (token, body) =>
+      request(`/api/share/access/${token}`, {
         method: 'POST',
         headers: jsonHeaders,
         body: JSON.stringify(body)
-      }),
-
-    getVaultEntries: () =>
-      request('/api/vault', {
-        headers: authHeaders
-      }),
-
-    createVaultEntry: (formData) =>
-      request('/api/vault', {
-        method: 'POST',
-        headers: authHeaders,
-        body: formData
-      }),
-
-    updateVaultEntry: (id, body) =>
-      request(`/api/vault/${id}`, {
-        method: 'PUT',
-        headers: {
-          ...jsonHeaders,
-          ...authHeaders
-        },
-        body: JSON.stringify(body)
-      }),
-
-    deleteVaultEntry: (id) =>
-      request(`/api/vault/${id}`, {
-        method: 'DELETE',
-        headers: authHeaders
       })
   };
 }

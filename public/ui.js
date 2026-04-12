@@ -60,7 +60,8 @@ export function renderViewMode() {
   appView.hidden = !isAuthenticated;
 }
 
-export function renderVaultEntries({ onEdit, onDelete }) {
+// NOTICE: onShare is now added right here!
+export function renderVaultEntries({ onEdit, onDelete, onShare }) {
   vaultList.innerHTML = '';
 
   if (!state.user) {
@@ -112,9 +113,20 @@ export function renderVaultEntries({ onEdit, onDelete }) {
       files.append(link);
     });
 
-    root.querySelector('[data-action="edit"]').addEventListener('click', () => onEdit(entry));
-    root.querySelector('[data-action="delete"]').addEventListener('click', () => onDelete(entry));
+    // Crash-proof event listeners
+    root.querySelector('[data-action="share"]')?.addEventListener('click', () => {
+      if (onShare) onShare(entry);
+    });  
+    
+    root.querySelector('[data-action="edit"]')?.addEventListener('click', () => {
+      if (onEdit) onEdit(entry);
+    });
 
+    root.querySelector('[data-action="delete"]')?.addEventListener('click', () => {
+      if (onDelete) onDelete(entry);
+    });
+
+    // Notice we only have ONE set of these closing brackets now!
     vaultList.append(fragment);
   });
 }

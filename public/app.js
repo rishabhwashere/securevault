@@ -1,15 +1,6 @@
 import { createApi } from './api.js';
 import { clearSession, setSession, state } from './state.js';
-import {
-  bindSectionNav,
-  getElements,
-  populateVaultForm,
-  renderSession,
-  renderViewMode,
-  renderVaultEntries,
-  resetVaultForm,
-  setFeedback
-} from './ui.js';
+import { bindSectionNav, getElements, populateVaultForm, renderSession, renderViewMode, renderVaultEntries, resetVaultForm, setFeedback } from './ui.js';
 
 const elements = getElements();
 
@@ -20,33 +11,29 @@ function api() {
 async function refreshVault() {
   if (!state.token) {
     state.vaultEntries = [];
-    renderVaultEntries({ onEdit: handleEditVault, onDelete: handleDeleteVault });
+    renderVaultEntries({ onEdit: handleEditVault, onDelete: handleDeleteVault, onShare: handleShareVault });
     return;
   }
-
   const response = await api().getVaultEntries();
   state.vaultEntries = response.data || [];
-  renderVaultEntries({ onEdit: handleEditVault, onDelete: handleDeleteVault });
+  renderVaultEntries({ onEdit: handleEditVault, onDelete: handleDeleteVault, onShare: handleShareVault });
 }
 
 async function refreshAll() {
   renderViewMode();
-
   if (state.token) {
     await refreshVault();
   } else {
     state.vaultEntries = [];
-    renderVaultEntries({ onEdit: handleEditVault, onDelete: handleDeleteVault });
+    renderVaultEntries({ onEdit: handleEditVault, onDelete: handleDeleteVault, onShare: handleShareVault });
   }
   renderSession();
 }
 
 async function handleRegister(event) {
   event.preventDefault();
-
   const formData = new FormData(elements.registerForm);
   const payload = Object.fromEntries(formData.entries());
-
   try {
     const response = await api().register(payload);
     setFeedback(`Welcome, ${response.user.name}! Your account has been created.`);
@@ -59,10 +46,8 @@ async function handleRegister(event) {
 
 async function handleLogin(event) {
   event.preventDefault();
-
   const formData = new FormData(elements.loginForm);
   const payload = Object.fromEntries(formData.entries());
-
   try {
     const response = await api().login(payload);
     setSession(response.token, response.user);
@@ -76,18 +61,12 @@ async function handleLogin(event) {
 
 async function handleVaultSubmit(event) {
   event.preventDefault();
-
   if (!state.token) {
     setFeedback('Log in first to create or update vault entries.', 'error');
     return;
   }
-
   const formData = new FormData(elements.vaultForm);
-  const rawTags = String(formData.get('tags') || '')
-    .split(',')
-    .map((tag) => tag.trim())
-    .filter(Boolean);
-
+  const rawTags = String(formData.get('tags') || '').split(',').map((tag) => tag.trim()).filter(Boolean);
   formData.delete('tags');
   rawTags.forEach((tag) => formData.append('tags', tag));
 
@@ -99,14 +78,12 @@ async function handleVaultSubmit(event) {
         data: formData.get('data'),
         tags: rawTags
       };
-
       await api().updateVaultEntry(state.editingId, updatePayload);
       setFeedback('Vault entry updated successfully.');
     } else {
       await api().createVaultEntry(formData);
       setFeedback('Vault entry created successfully.');
     }
-
     resetVaultForm();
     await refreshVault();
   } catch (error) {
@@ -120,21 +97,29 @@ function handleEditVault(entry) {
 }
 
 async function handleDeleteVault(entry) {
-  if (!state.token) {
-    setFeedback('Log in first to delete vault entries.', 'error');
-    return;
-  }
-
+  if (!state.token) return setFeedback('Log in first to delete vault entries.', 'error');
   const shouldDelete = window.confirm(`Delete "${entry.title}"?`);
   if (!shouldDelete) return;
 
   try {
     await api().deleteVaultEntry(entry._id);
     setFeedback('Vault entry deleted successfully.');
-    if (state.editingId === entry._id) {
-      resetVaultForm();
-    }
+    if (state.editingId === entry._id) resetVaultForm();
     await refreshVault();
+  } catch (error) {
+    setFeedback(error.message, 'error');
+  }
+}
+
+// --- THIS IS THE MISSING SHARE LOGIC ---
+async function handleShareVault(entry) {
+  const password = window.prompt(`Set a password to share "${entry.title}":`);
+  if (!password) return;
+
+  try {
+    const response = await api().generateShareLink(entry._id, { password });
+    window.prompt('Link generated! Copy it below:', response.link);
+    setFeedback('Share link created successfully.');
   } catch (error) {
     setFeedback(error.message, 'error');
   }
@@ -145,13 +130,12 @@ function handleLogout() {
   resetVaultForm();
   renderViewMode();
   renderSession();
-  renderVaultEntries({ onEdit: handleEditVault, onDelete: handleDeleteVault });
+  renderVaultEntries({ onEdit: handleEditVault, onDelete: handleDeleteVault, onShare: handleShareVault });
   setFeedback('You have been logged out.');
 }
 
 function bindEvents() {
   bindSectionNav();
-
   elements.registerForm.addEventListener('submit', handleRegister);
   elements.loginForm.addEventListener('submit', handleLogin);
   elements.vaultForm.addEventListener('submit', handleVaultSubmit);
@@ -164,7 +148,7 @@ async function bootstrap() {
   bindEvents();
   renderViewMode();
   renderSession();
-  renderVaultEntries({ onEdit: handleEditVault, onDelete: handleDeleteVault });
+  renderVaultEntries({ onEdit: handleEditVault, onDelete: handleDeleteVault, onShare: handleShareVault });
 
   try {
     await refreshAll();

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>VaultX - Secure Document</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body style="padding: 50px;">
+  <div class="panel" style="max-width: 600px; margin: 0 auto;">
+    <h3>Unlock Secure Vault</h3>
+    <p class="vault-category" style="margin-bottom: 20px;">This document is password protected.</p>
+    
+    <input type="password" id="share-password" placeholder="Enter Password" style="margin-bottom: 15px;">
+    <button id="unlock-btn" class="secondary-button">Unlock Document</button>
+    
+    <div id="output" style="margin-top: 20px;" hidden>
+      <h4 id="doc-title"></h4>
+      <p id="doc-data" style="margin-top: 10px;"></p>
+      <div id="doc-files" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;"></div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('unlock-btn').addEventListener('click', async () => {
+      const token = window.location.pathname.split('/').pop();
+      const password = document.getElementById('share-password').value;
+
+      try {
+        const res = await fetch(`/api/share/access/${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+
+        const result = await res.json();
+        
+        if (!res.ok) throw new Error(result.message);
+
+        // Display the decrypted data
+        document.getElementById('output').hidden = false;
+        document.getElementById('doc-title').textContent = result.data.title;
+        document.getElementById('doc-data').textContent = result.data.data;
+        document.getElementById('unlock-btn').hidden = true;
+        document.getElementById('share-password').hidden = true;
+        // --- NEW LOGIC TO RENDER FILES & IMAGES (ADD THIS BELOW) ---
+        const filesContainer = document.getElementById('doc-files');
+        filesContainer.innerHTML = ''; // Clear it out first
+        
+        if (result.data.files && result.data.files.length > 0) {
+          result.data.files.forEach((fileUrl, index) => {
+            // Check if the URL ends in an image extension
+            const isImage = fileUrl.match(/\.(jpeg|jpg|gif|png)$/i) != null;
+            
+            if (isImage) {
+              // If it's an image, create an <img> tag to display it
+              const img = document.createElement('img');
+              img.src = fileUrl;
+              img.style.maxWidth = '100%';
+              img.style.borderRadius = '8px';
+              filesContainer.appendChild(img);
+            } else {
+              // If it's a regular file (PDF, zip), create a clickable download link
+              const link = document.createElement('a');
+              link.href = fileUrl;
+              link.target = '_blank';
+              link.textContent = `📄 Download File ${index + 1}`;
+              filesContainer.appendChild(link);
+            }
+          });
+        }
+
+      } catch (error) {
+        alert(error.message);
+      }
+    });
+  </script>
+</body>
+</html>

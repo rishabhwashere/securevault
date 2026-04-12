@@ -128,8 +128,4 @@ module.exports = {
   getAllVaultEntries,
   updateVaultEntry,
   deleteVaultEntry
-<<<<<<< HEAD
 };
-=======
-};
->>>>>>> 7640d58b35117d32cb3c6356332f2c086582f9b3
