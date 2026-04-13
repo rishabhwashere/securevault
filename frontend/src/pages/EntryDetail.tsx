@@ -1,0 +1,202 @@
+import { Copy, ExternalLink, Eye, EyeOff, Pencil } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
+import toast from 'react-hot-toast';
+import { useNavigate, useParams } from 'react-router-dom';
+import { EntryForm } from '@/components/forms/EntryForm';
+import { Badge, Button, Card } from '@/components/ui';
+import { useVaultEntry, useUpdateEntry } from '@/features/vault/useVault';
+import { copyToClipboard, formatDateTime, maskValue, normalizeUrl } from '@/lib/utils';
+
+export function EntryDetailPage() {
+  const navigate = useNavigate();
+  const { id = '' } = useParams();
+  const entryQuery = useVaultEntry(id);
+  const updateMutation = useUpdateEntry(id);
+  const [revealed, setRevealed] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(30);
+  const [editing, setEditing] = useState(false);
+  const entry = entryQuery.data;
+
+  useEffect(() => {
+    if (!revealed) {
+      setSecondsLeft(30);
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setSecondsLeft((value) => {
+        if (value <= 1) {
+          setRevealed(false);
+          return 30;
+        }
+        return value - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [revealed]);
+
+  if (!entry) {
+    return (
+      <Card className="rounded-xl">
+        <p className="text-sm text-textMuted">Loading entry details...</p>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div>
+          <Badge>{entry.category || 'General'}</Badge>
+          <h1 className="mt-4 font-heading text-4xl text-textPrimary">{entry.title}</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-textMuted">{entry.notes || entry.data || 'No notes saved yet.'}</p>
+        </div>
+        <Button variant="ghost" onClick={() => navigate('/vault')}>
+          Back to vault
+        </Button>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+        <Card className="space-y-6 rounded-xl">
+          <DetailRow label="Website" value={entry.url} action={entry.url ? (
+            <button
+              type="button"
+              onClick={() => window.open(normalizeUrl(entry.url || ''), '_blank', 'noopener,noreferrer')}
+              className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/70 hover:text-brand"
+              aria-label="Open website"
+            >
+              <ExternalLink className="h-4 w-4" />
+            </button>
+          ) : undefined} />
+          <DetailRow
+            label="Username"
+            value={entry.username}
+            action={
+              entry.username ? (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (await copyToClipboard(entry.username || '')) toast.success('Username copied');
+                  }}
+                  className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/70 hover:text-brand"
+                  aria-label="Copy username"
+                >
+                  <Copy className="h-4 w-4" />
+                </button>
+              ) : undefined
+            }
+          />
+          <DetailRow
+            label="Password"
+            value={entry.password ? maskValue(entry.password, revealed) : ''}
+            action={
+              entry.password ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRevealed((value) => !value)}
+                    className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/70 hover:text-brand"
+                    aria-label={revealed ? 'Hide password' : 'Reveal password'}
+                  >
+                    {revealed ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (await copyToClipboard(entry.password || '')) toast.success('Password copied');
+                    }}
+                    className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/70 hover:text-brand"
+                    aria-label="Copy password"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                  {revealed ? (
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-brand/20 text-xs font-medium text-brand">
+                      {secondsLeft}
+                    </span>
+                  ) : null}
+                </div>
+              ) : undefined
+            }
+          />
+          <DetailRow label="Notes" value={entry.notes || entry.data} multiline />
+        </Card>
+
+        <div className="space-y-6">
+          <Card className="rounded-xl">
+            <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Metadata</p>
+            <div className="mt-4 grid gap-4">
+              <MetaItem label="Created" value={formatDateTime(entry.createdAt)} />
+              <MetaItem label="Updated" value={formatDateTime(entry.updatedAt)} />
+              <MetaItem label="Attachments" value={`${entry.filePath?.length ?? 0} files`} />
+              <MetaItem label="Tags" value={entry.tags?.join(', ') || 'None'} />
+            </div>
+          </Card>
+
+          <Card className="rounded-xl">
+            <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Related context</p>
+            <div className="mt-4 space-y-3 text-sm text-textMuted">
+              <p>This MVP stores a lightweight activity summary in the right rail.</p>
+              <p>Detailed per-entry activity can expand from here once the backend logs are scoped by entry and user.</p>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        className="focus-ring fixed bottom-24 right-6 z-40 inline-flex items-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-medium text-white shadow-card transition hover:-translate-y-px lg:bottom-8"
+      >
+        <Pencil className="h-4 w-4" />
+        Edit
+      </button>
+
+      <EntryForm
+        open={editing}
+        mode="edit"
+        entry={entry}
+        onClose={() => setEditing(false)}
+        onSubmit={async (payload) => {
+          await updateMutation.mutateAsync(payload);
+          setEditing(false);
+        }}
+      />
+    </div>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+  action,
+  multiline = false
+}: {
+  label: string;
+  value?: string;
+  action?: ReactNode;
+  multiline?: boolean;
+}) {
+  return (
+    <div className="space-y-2 border-b border-line/70 pb-5 last:border-none last:pb-0">
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-xs uppercase tracking-[0.22em] text-textMuted">{label}</p>
+        {action}
+      </div>
+      <div className={multiline ? 'rounded-lg bg-white/60 p-4 text-sm leading-7 text-textPrimary' : 'text-lg font-medium text-textPrimary'}>
+        {value || 'Not provided'}
+      </div>
+    </div>
+  );
+}
+
+function MetaItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-white/55 p-4">
+      <p className="text-xs uppercase tracking-[0.2em] text-textMuted">{label}</p>
+      <p className="mt-2 text-sm font-medium text-textPrimary">{value}</p>
+    </div>
+  );
+}

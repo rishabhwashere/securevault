@@ -1,32 +1,23 @@
-# VaultX 🔐  
-### Secure Digital Vault
+# VaultX
 
-VaultX is a security-focused digital vault designed to **safely store, encrypt, and manage sensitive information**. Built with a privacy-first mindset, it ensures data protection both **at rest** and **during access**, while maintaining a clean and scalable architecture.
+Secure digital vault with a Node/Express backend and a React/Vite frontend.
 
----
+## Project structure
 
-## ✨ What Makes VaultX Different?
+- `backend/`: Express server, API routes, models, middleware, and database config
+- `frontend/`: Current React + Vite application
+- `uploads/`: Uploaded file storage
 
-- 🔒 **Security-First Design** – Strong focus on data protection and privacy
-- ⚙️ **Robust Backend Architecture** – Built using Express.js with clean separation of concerns
-- 🧩 **Validated API Requests** – Input validation middleware to prevent malformed data
-- 📦 **Structured Responses** – Predictable, well-defined JSON responses
-- 🚀 **Scalable Foundation** – Designed to support encryption, authentication, and access control
+## Scripts
 
----
+- `npm run dev`: Start the backend
+- `npm run dev:backend`: Start the backend
+- `npm run dev:frontend`: Start the Vite frontend
+- `npm run build`: Build the frontend into `frontend/dist`
+- `npm start`: Start the backend in normal mode
 
-## 🧠 Overview
+## Notes
 
-VaultX provides a RESTful API layer for securely handling vault data. The system is structured for clarity and extensibility, making it suitable for building secure file storage, password management, or confidential data systems.
-
-Future enhancements include encryption implementation, secure key management, database integration, and role-based access control.
-
----
-
-## 🛡️ Vision
-
-VaultX aims to be a **reliable and secure foundation** for applications where trust, privacy, and data integrity are non-negotiable.
-
----
-
-⭐ *Built with security, clarity, and scalability in mind.*
+- The old static frontend has been removed.
+- The backend now serves only the built React app from `frontend/dist`.
+- If `frontend/dist` does not exist yet, the backend returns a helpful message telling you to build the frontend or run the Vite app separately.
