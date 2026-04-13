@@ -5,7 +5,7 @@ import { useAuthStore } from '@/features/auth/auth.store';
 import { AuthPage } from '@/pages/Auth';
 import { DashboardPage } from '@/pages/Dashboard';
 import { EntryDetailPage } from '@/pages/EntryDetail';
-import { SettingsPage } from '@/pages/Settings';
+import { ProfilePage } from '@/pages/Profile';
 
 function AnimatedRouteOutlet() {
   const location = useLocation();
@@ -59,8 +59,8 @@ export const router = createBrowserRouter([
             element: <EntryDetailPage />
           },
           {
-            path: '/vault/settings',
-            element: <SettingsPage />
+            path: '/vault/profile',
+            element: <ProfilePage />
           }
         ]
       }

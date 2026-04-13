@@ -16,6 +16,11 @@ const userSchema = new mongoose.Schema(
       trim: true,
       match: [/.+\@.+\..+/, 'Please fill a valid email address'],
     },
+    avatarUrl: {
+      type: String,
+      default: '',
+      trim: true
+    },
     password: {
       type: String,
       required: true,

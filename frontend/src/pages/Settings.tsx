@@ -2,10 +2,8 @@ import { Card, Toggle } from '@/components/ui';
 import { useSettingsStore } from '@/features/settings/settings.store';
 
 export function SettingsPage() {
-  const autoLockMinutes = useSettingsStore((state) => state.autoLockMinutes);
   const compactCards = useSettingsStore((state) => state.compactCards);
   const blurSensitive = useSettingsStore((state) => state.blurSensitive);
-  const setAutoLockMinutes = useSettingsStore((state) => state.setAutoLockMinutes);
   const setCompactCards = useSettingsStore((state) => state.setCompactCards);
   const setBlurSensitive = useSettingsStore((state) => state.setBlurSensitive);
 
@@ -20,17 +18,6 @@ export function SettingsPage() {
         <Card className="rounded-xl">
           <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Security</p>
           <div className="mt-5 grid gap-4">
-            <label className="grid gap-2 text-sm text-textMuted">
-              <span>Auto-lock after inactivity</span>
-              <input
-                type="range"
-                min={1}
-                max={60}
-                value={autoLockMinutes}
-                onChange={(event) => setAutoLockMinutes(Number(event.target.value))}
-              />
-              <span className="text-sm font-medium text-textPrimary">{autoLockMinutes} minutes</span>
-            </label>
             <Toggle checked={blurSensitive} onChange={setBlurSensitive} label="Blur sensitive values by default" />
           </div>
         </Card>

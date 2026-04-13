@@ -1,10 +1,10 @@
-import { Home, Plus, Settings2 } from 'lucide-react';
+import { Home, Plus, UserCircle2 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 const items = [
   { to: '/vault', label: 'Vault', icon: Home },
   { to: '/vault/new', label: 'New', icon: Plus },
-  { to: '/vault/settings', label: 'Settings', icon: Settings2 }
+  { to: '/vault/profile', label: 'Profile', icon: UserCircle2 }
 ];
 
 export function BottomNav() {
