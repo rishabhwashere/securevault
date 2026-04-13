@@ -1,0 +1,41 @@
+import * as React from 'react';
+import { LoaderCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+
+const variants: Record<ButtonVariant, string> = {
+  primary:
+    'bg-gradient-to-br from-brand to-brand-deep text-white shadow-soft hover:-translate-y-px hover:shadow-card',
+  secondary:
+    'border border-brand/20 bg-brand-light text-brand hover:bg-brand hover:text-white',
+  ghost:
+    'border border-line bg-transparent text-textMuted hover:border-brand/40 hover:text-brand',
+  danger:
+    'border border-danger/20 bg-danger/10 text-danger hover:bg-danger hover:text-white'
+};
+
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: ButtonVariant;
+  loading?: boolean;
+}
+
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, children, variant = 'primary', loading = false, disabled, ...props }, ref) => (
+    <button
+      ref={ref}
+      className={cn(
+        'focus-ring inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40',
+        variants[variant],
+        className
+      )}
+      disabled={disabled || loading}
+      {...props}
+    >
+      {loading ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
+      <span>{children}</span>
+    </button>
+  )
+);
+
+Button.displayName = 'Button';

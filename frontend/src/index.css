@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Instrument+Sans:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-line;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    @apply min-h-screen bg-background font-sans text-textPrimary antialiased;
+    background-image:
+      radial-gradient(circle at top left, rgba(31, 107, 95, 0.16), transparent 24%),
+      radial-gradient(circle at top right, rgba(199, 134, 70, 0.14), transparent 28%),
+      linear-gradient(180deg, #f8f2eb 0%, #f3ebe1 100%);
+  }
+
+  #root {
+    @apply min-h-screen;
+  }
+
+  ::selection {
+    @apply bg-brand/20 text-textPrimary;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply border border-line bg-panel shadow-soft backdrop-blur-panel;
+  }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/15;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(31, 107, 95, 0.3) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(31, 107, 95, 0.22);
+    border-radius: 999px;
+  }
+}
