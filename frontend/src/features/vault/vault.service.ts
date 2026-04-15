@@ -67,3 +67,15 @@ export async function deleteVaultEntry(token: string, id: string) {
     headers: authHeaders(token)
   });
 }
+export async function generateShareLink(token: string, vaultId: string, password: string) {
+  const response = await request(`/api/share/generate/${vaultId}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`, // Manually forcing the token header!
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ password })
+  });
+  
+  return response;
+}

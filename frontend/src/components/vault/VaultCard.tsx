@@ -1,12 +1,15 @@
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Copy, Ellipsis, Eye, FileText, Pencil, Trash2 } from 'lucide-react';
+import { Copy, Ellipsis, Eye, FileText, Pencil, Share2, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui';
 import { copyToClipboard, formatRelativeTime, maskValue, truncate } from '@/lib/utils';
 import { categoryPalette } from '@/lib/constants';
 import type { VaultEntry } from '@/features/vault/vault.types';
+
+// The perfectly matching import for your service file!
+import { generateShareLink } from '@/features/vault/vault.service';
 
 interface VaultCardProps {
   entry: VaultEntry;
@@ -25,6 +28,47 @@ export function VaultCard({ entry, index, onView, onEdit, onDelete }: VaultCardP
     const timer = window.setTimeout(() => setRevealed(false), 15000);
     return () => window.clearTimeout(timer);
   }, [revealed]);
+  const handleShare = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    
+    const password = window.prompt(`Set a password to share "${entry.title}":`);
+    if (!password) return;
+
+    try {
+      // 1. The Ultimate Token Hunt
+      let token = localStorage.getItem('token') || '';
+      
+      // If it's not in 'token', check inside the 'user' object just in case!
+      if (!token) {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          token = JSON.parse(storedUser).token || '';
+        }
+      }
+      
+      // Clean up the token
+      token = token.replace(/['"]+/g, '');
+
+      // 2. The Safety Check (If this pops up, your browser forgot your login!)
+      if (!token) {
+        toast.error("You are missing a security token! Please log out and log back in.");
+        return;
+      }
+
+      // 3. Send the request
+      const response = await generateShareLink(token, entry._id, password);
+      const shareUrl = `${window.location.origin}${response.link}`;
+      
+      const copied = await copyToClipboard(shareUrl);
+      if (copied) {
+        toast.success('Share link copied to clipboard!');
+      } else {
+        window.prompt('Link generated! Copy it below:', shareUrl);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to generate share link');
+    }
+  };
 
   const categoryClass = categoryPalette[entry.category] ?? categoryPalette.General;
 
@@ -96,6 +140,22 @@ export function VaultCard({ entry, index, onView, onEdit, onDelete }: VaultCardP
                     </button>
                   )}
                 </MenuItem>
+                
+                <MenuItem>
+                  {({ focus }) => (
+                    <button
+                      type="button"
+                      onClick={handleShare}
+                      className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm ${
+                        focus ? 'bg-white/70 text-brand' : 'text-textPrimary'
+                      }`}
+                    >
+                      <Share2 className="h-4 w-4" />
+                      Share Securely
+                    </button>
+                  )}
+                </MenuItem>
+
                 <MenuItem>
                   {({ focus }) => (
                     <button

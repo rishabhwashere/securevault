@@ -6,6 +6,7 @@ import { AuthPage } from '@/pages/Auth';
 import { DashboardPage } from '@/pages/Dashboard';
 import { EntryDetailPage } from '@/pages/EntryDetail';
 import { SettingsPage } from '@/pages/Settings';
+import { SharedItemPage } from '@/pages/SharedItemPage'; // Add this near your other imports!
 
 function AnimatedRouteOutlet() {
   const location = useLocation();
@@ -39,6 +40,10 @@ export const router = createBrowserRouter([
   {
     path: '/',
     element: <AuthPage />
+  },
+  {
+    path: '/shared/:token',
+    element: <SharedItemPage /> // Or just <div>Shared Page Working!</div> if you haven't built the UI yet
   },
   {
     element: <ProtectedLayout />,
