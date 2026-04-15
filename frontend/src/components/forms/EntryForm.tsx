@@ -82,6 +82,20 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
   }, [form]);
 
   async function handleSubmit(values: EntryValues) {
+    const formData = new FormData();
+  
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
+
+  console.log("--- Final Submission Data ---");
+  formData.forEach((value, key) => {
+    if (value instanceof File) {
+      console.log(`${key}: [File] ${value.name} (${value.size} bytes)`);
+    } else {
+      console.log(`${key}:`, value);
+    }
+  });
     await onSubmit({
       title: values.title,
       category: values.category,

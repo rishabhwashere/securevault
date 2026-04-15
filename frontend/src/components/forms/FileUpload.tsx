@@ -13,10 +13,21 @@ export function FileUpload({ files, onChange, existingFiles = [] }: FileUploadPr
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   function pushFiles(nextFiles: FileList | null) {
-    if (!nextFiles) return;
-    onChange([...files, ...Array.from(nextFiles)]);
+  if (!nextFiles) return;
+  const fileArray = Array.from(nextFiles);
+
+  // STEP 1: Log the selected files array
+  console.log("Selected Files:", fileArray);
+
+  // STEP 2: Log specific details of the first file
+  if (fileArray.length > 0) {
+    console.log("File Name:", fileArray[0].name);
+    console.log("File Size:", (fileArray[0].size / 1024).toFixed(2) + " KB");
+    console.log("File Type:", fileArray[0].type);
   }
 
+  onChange([...files, ...fileArray]);
+}
   return (
     <div className="grid gap-3">
       <button

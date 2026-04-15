@@ -3,23 +3,20 @@ import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 export function SharedItemPage() {
-  // 1. Grab the secure token from the URL (/shared/e0ee043...)
+ 
   const { token } = useParams<{ token: string }>();
-  
-  // 2. Set up our state variables
+ 
   const [password, setPassword] = useState('');
   const [vaultData, setVaultData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 3. The function that runs when you click "Unlock"
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password) return toast.error('Please enter a password');
 
     setIsLoading(true);
     try {
-      // NOTE: This URL might need to change depending on what Amoolya named the 
-      // access route in the backend (e.g., /api/share/access/:token vs /api/share/:token)
+      
       const response = await fetch(`/api/share/access/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -31,8 +28,6 @@ export function SharedItemPage() {
       if (!response.ok) {
         throw new Error(data.message || 'Incorrect password or link expired');
       }
-
-      // Success! Save the unlocked data to state so we can show it
       setVaultData(data);
       toast.success('Vault unlocked!');
     } catch (error: any) {
@@ -42,9 +37,8 @@ export function SharedItemPage() {
     }
   };
 
-  // --- VIEW 1: WHAT IT SHOWS AFTER YOU UNLOCK IT ---
 if (vaultData) {
-  // We grab the first file in the array (index 0)
+  
   const attachedImages = vaultData.files || [];
   
   return (
@@ -52,7 +46,7 @@ if (vaultData) {
       <div className="w-full max-w-2xl bg-panel border border-line rounded-xl p-8 shadow-soft">
         <h1 className="text-2xl font-bold text-textPrimary mb-6">{vaultData.title}</h1>
 
-        {/* THE FIX: Loop through the files array to show the image(s) */}
+        {}
         {attachedImages.length > 0 && (
           <div className="mb-6 w-full flex flex-col gap-4 items-center bg-background rounded-lg border border-line p-2">
             {attachedImages.map((url: string, index: number) => (
@@ -74,7 +68,6 @@ if (vaultData) {
   );
 }
 
-  // --- VIEW 2: THE LOCKED PASSWORD SCREEN (Default) ---
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-background text-center">
       <div className="w-full max-w-md bg-panel border border-line rounded-xl p-8 shadow-soft">
