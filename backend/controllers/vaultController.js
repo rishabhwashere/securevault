@@ -2,7 +2,6 @@ const Vault = require('../models/vault');
 const ActivityLog = require('../models/activitylog');
 const { decrypt } = require('../Utils/encryption');
 
-// Decrypt data when sending to frontend.
 const formatVaultEntry = (vaultEntry) => {
   const formattedEntry = vaultEntry.toObject();
   formattedEntry.data = decrypt(formattedEntry.data);
@@ -13,6 +12,10 @@ const formatVaultEntry = (vaultEntry) => {
 
 const createVaultEntry = async (req, res) => {
   try {
+    console.log("=== INCOMING UPLOAD DATA ===");
+    console.log("TEXT DATA:", req.body);
+    console.log("IMAGE FILES:", req.files);
+    console.log("============================");
     const { title, data, category, tags, url, username, password, notes } = req.body;
 
     let uploadedFiles = [];

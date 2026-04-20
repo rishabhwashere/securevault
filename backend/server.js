@@ -42,6 +42,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/vault', vaultRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/share', require('./routes/shareRoutes'));
 
 app.get('*', (req, res) => {
   if (!fs.existsSync(frontendDistDir)) {
@@ -59,7 +60,7 @@ async function startServer() {
 
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
-      console.log(`Connected database: ${dbConnection.name}`);
+      console.log(`Connected database: ${dbConnection.name || 'MongoDB'}`);
       console.log(`VaultX Home:   http://localhost:${PORT}/`);
       console.log(`Auth Register: http://localhost:${PORT}/api/auth/register`);
       console.log(`Auth Login:    http://localhost:${PORT}/api/auth/login`);
@@ -69,6 +70,8 @@ async function startServer() {
       console.log(`Activity API:  http://localhost:${PORT}/api/activity`);
     });
   } catch (error) {
+    console.error(" CRITICAL SERVER CRASH:");
+    console.error(error);
     process.exit(1);
   }
 }
