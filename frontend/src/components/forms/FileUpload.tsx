@@ -1,4 +1,4 @@
-import { FileText, Paperclip, Trash2, UploadCloud } from 'lucide-react';
+import { ExternalLink, FileText, Paperclip, Trash2, UploadCloud } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -13,21 +13,10 @@ export function FileUpload({ files, onChange, existingFiles = [] }: FileUploadPr
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   function pushFiles(nextFiles: FileList | null) {
-  if (!nextFiles) return;
-  const fileArray = Array.from(nextFiles);
-
-  // STEP 1: Log the selected files array
-  console.log("Selected Files:", fileArray);
-
-  // STEP 2: Log specific details of the first file
-  if (fileArray.length > 0) {
-    console.log("File Name:", fileArray[0].name);
-    console.log("File Size:", (fileArray[0].size / 1024).toFixed(2) + " KB");
-    console.log("File Type:", fileArray[0].type);
+    if (!nextFiles) return;
+    onChange([...files, ...Array.from(nextFiles)]);
   }
 
-  onChange([...files, ...fileArray]);
-}
   return (
     <div className="grid gap-3">
       <button
@@ -60,14 +49,23 @@ export function FileUpload({ files, onChange, existingFiles = [] }: FileUploadPr
       </button>
 
       <div className="grid gap-2">
-        {existingFiles.map((file) => (
-          <div key={file} className="flex items-center justify-between rounded-md border border-line bg-white/50 px-3 py-2 text-sm">
-            <span className="flex items-center gap-2 truncate text-textPrimary">
+        {existingFiles.map((file, index) => (
+          <a
+            key={file}
+            href={file}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center justify-between rounded-md border border-line bg-white/50 px-3 py-2 text-sm transition hover:border-brand/40 hover:bg-white/70"
+          >
+            <span className="flex min-w-0 items-center gap-2 truncate text-textPrimary">
               <FileText className="h-4 w-4 text-brand" />
-              <span className="truncate">{file.split('/').pop()}</span>
+              <span className="truncate">{`Saved attachment ${index + 1}`}</span>
             </span>
-            <span className="text-xs text-textMuted">Saved</span>
-          </div>
+            <span className="flex items-center gap-1 text-xs text-textMuted">
+              Open
+              <ExternalLink className="h-3.5 w-3.5" />
+            </span>
+          </a>
         ))}
 
         {files.map((file, index) => (

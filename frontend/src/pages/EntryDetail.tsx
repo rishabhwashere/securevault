@@ -1,4 +1,4 @@
-import { Copy, ExternalLink, Eye, EyeOff, Pencil } from 'lucide-react';
+import { Copy, Download, ExternalLink, Eye, EyeOff, FileImage, FileText, Pencil } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import toast from 'react-hot-toast';
@@ -136,6 +136,46 @@ export function EntryDetailPage() {
           </Card>
 
           <Card className="rounded-xl">
+            <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Attachments</p>
+            <div className="mt-4 grid gap-3">
+              {entry.filePath?.length ? (
+                entry.filePath.map((fileUrl, index) => {
+                  const image = isPreviewableImage(fileUrl);
+                  const label = `Attachment ${index + 1}`;
+
+                  return (
+                    <a
+                      key={fileUrl}
+                      href={fileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="group rounded-xl border border-line bg-white/55 p-3 transition hover:border-brand/40 hover:bg-white/75"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand">
+                          {image ? <FileImage className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-textPrimary">{label}</p>
+                          <p className="mt-1 text-xs text-textMuted">
+                            {image ? 'Image attachment' : 'Open attached file in a new tab'}
+                          </p>
+                        </div>
+                        <Download className="mt-1 h-4 w-4 shrink-0 text-textMuted transition group-hover:text-brand" />
+                      </div>
+                      {image ? (
+                        <img src={fileUrl} alt={label} className="mt-3 h-32 w-full rounded-lg border border-line/70 object-cover" />
+                      ) : null}
+                    </a>
+                  );
+                })
+              ) : (
+                <p className="text-sm text-textMuted">No files attached to this entry.</p>
+              )}
+            </div>
+          </Card>
+
+          <Card className="rounded-xl">
             <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Related context</p>
             <div className="mt-4 space-y-3 text-sm text-textMuted">
               <p>This MVP stores a lightweight activity summary in the right rail.</p>
@@ -199,4 +239,8 @@ function MetaItem({ label, value }: { label: string; value: string }) {
       <p className="mt-2 text-sm font-medium text-textPrimary">{value}</p>
     </div>
   );
+}
+
+function isPreviewableImage(fileUrl: string) {
+  return /\.(png|jpe?g|webp|gif|bmp|svg)$/i.test(fileUrl);
 }

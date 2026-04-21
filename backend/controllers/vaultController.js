@@ -1,21 +1,19 @@
 const Vault = require('../models/vault');
 const ActivityLog = require('../models/activitylog');
-const { decrypt } = require('../Utils/encryption');
+const { decrypt, encrypt } = require('../Utils/encryption');
 
 const formatVaultEntry = (vaultEntry) => {
   const formattedEntry = vaultEntry.toObject();
+  formattedEntry.title = decrypt(formattedEntry.title);
   formattedEntry.data = decrypt(formattedEntry.data);
   formattedEntry.password = decrypt(formattedEntry.password);
   formattedEntry.notes = decrypt(formattedEntry.notes);
+  formattedEntry.filePath = (formattedEntry.filePath || []).map((filePath) => decrypt(filePath));
   return formattedEntry;
 };
 
 const createVaultEntry = async (req, res) => {
   try {
-    console.log("=== INCOMING UPLOAD DATA ===");
-    console.log("TEXT DATA:", req.body);
-    console.log("IMAGE FILES:", req.files);
-    console.log("============================");
     const { title, data, category, tags, url, username, password, notes } = req.body;
 
     let uploadedFiles = [];
@@ -42,7 +40,7 @@ const createVaultEntry = async (req, res) => {
       user: req.user._id,
       action: 'VAULT_CREATED',
       vault: vaultEntry._id,
-      metadata: { title }
+      metadata: { title: encrypt(title) }
     });
 
     res.status(201).json({
