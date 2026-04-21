@@ -21,7 +21,13 @@ async function uploadAvatar(token: string, file: File) {
     throw new Error(payload.message || 'Upload failed');
   }
 
-  return payload.filePath as string;
+  const uploadedUrl = payload.fileUrl || payload.filePath || payload.secure_url || payload.url;
+
+  if (typeof uploadedUrl !== 'string' || !uploadedUrl.trim()) {
+    throw new Error('Upload completed but no avatar URL was returned');
+  }
+
+  return uploadedUrl;
 }
 
 export function ProfilePage() {
@@ -32,6 +38,7 @@ export function ProfilePage() {
   const [name, setName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     setName(user?.name ?? '');
@@ -58,13 +65,15 @@ export function ProfilePage() {
       return;
     }
 
+    setIsSaving(true);
+
     try {
       let nextAvatar = avatarUrl;
       if (file) {
         nextAvatar = await uploadAvatar(token, file);
       }
 
-      await updateProfile.mutateAsync({
+      const response = await updateProfile.mutateAsync({
         token,
         payload: {
           name,
@@ -72,10 +81,14 @@ export function ProfilePage() {
         }
       });
 
+      setName(response.data.name ?? name);
+      setAvatarUrl(response.data.avatarUrl ?? nextAvatar);
       setFile(null);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Profile update failed';
       toast.error(message);
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -101,6 +114,7 @@ export function ProfilePage() {
               <input
                 type="file"
                 accept="image/*"
+                disabled={isSaving}
                 onChange={(event) => setFile(event.target.files?.[0] ?? null)}
                 className="text-sm text-textMuted"
               />
@@ -117,7 +131,7 @@ export function ProfilePage() {
           <Input label="Email" value={user?.email ?? ''} disabled />
 
           <div className="flex justify-end">
-            <Button type="submit" loading={updateProfile.isPending}>
+            <Button type="submit" loading={isSaving} disabled={isSaving}>
               Save profile
             </Button>
           </div>
