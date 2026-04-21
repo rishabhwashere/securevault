@@ -1,33 +1,13 @@
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
-const { Readable } = require('stream');
 const Vault = require('../models/vault');
 const SharedLink = require('../models/sharedLink');
 const { decrypt } = require('../Utils/encryption');
+const { pipeRemoteDocument, resolveDocumentKind } = require('../Utils/remoteDocument');
 
 function decryptFileList(filePaths = []) {
   return filePaths.map((filePath) => decrypt(filePath));
-}
-
-function getDocumentKind(filePath) {
-  if (/\.pdf(?:$|\?)/i.test(filePath)) return 'pdf';
-  if (/\.(png|jpe?g|webp|gif|bmp|svg)(?:$|\?)/i.test(filePath)) return 'image';
-  return 'file';
-}
-
-function getDownloadFilename(contentType, fallbackKind) {
-  const normalized = (contentType || '').toLowerCase();
-
-  if (normalized.includes('application/pdf') || fallbackKind === 'pdf') return 'shared-document.pdf';
-  if (normalized.includes('image/jpeg')) return 'shared-document.jpg';
-  if (normalized.includes('image/png')) return 'shared-document.png';
-  if (normalized.includes('image/webp')) return 'shared-document.webp';
-  if (normalized.includes('image/gif')) return 'shared-document.gif';
-  if (normalized.includes('image/bmp')) return 'shared-document.bmp';
-  if (normalized.includes('image/svg+xml')) return 'shared-document.svg';
-
-  return 'shared-document.bin';
 }
 
 const createSharedLink = async (req, res) => {
@@ -95,7 +75,7 @@ const getSharedLinkInfo = async (req, res) => {
     return res.status(200).json({
       success: true,
       data: {
-        kind: getDocumentKind(filePath)
+        kind: await resolveDocumentKind(filePath)
       }
     });
   } catch (error) {
@@ -138,7 +118,7 @@ const verifySharedLinkPassword = async (req, res) => {
       message: 'Password verified',
       data: {
         accessToken,
-        kind: getDocumentKind(filePath)
+        kind: await resolveDocumentKind(filePath)
       }
     });
   } catch (error) {
@@ -146,24 +126,31 @@ const verifySharedLinkPassword = async (req, res) => {
   }
 };
 
+function validateDownloadToken(shareId, token) {
+  if (!token || typeof token !== 'string') {
+    return { error: 'Download token is required' };
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (decoded.scope !== 'shared-document-download' || decoded.shareId !== shareId) {
+      return { error: 'Invalid download token scope' };
+    }
+
+    return { decoded };
+  } catch {
+    return { error: 'Invalid or expired download token' };
+  }
+}
+
 const downloadSharedDocument = async (req, res) => {
   try {
     const { token } = req.query;
+    const validation = validateDownloadToken(req.params.shareId, token);
 
-    if (!token || typeof token !== 'string') {
-      return res.status(401).json({ success: false, message: 'Download token is required' });
-    }
-
-    let decoded;
-
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (error) {
-      return res.status(401).json({ success: false, message: 'Invalid or expired download token' });
-    }
-
-    if (decoded.scope !== 'shared-document-download' || decoded.shareId !== req.params.shareId) {
-      return res.status(401).json({ success: false, message: 'Invalid download token scope' });
+    if (validation.error) {
+      return res.status(401).json({ success: false, message: validation.error });
     }
 
     const sharedLink = await SharedLink.findOne({ shareId: req.params.shareId });
@@ -173,19 +160,41 @@ const downloadSharedDocument = async (req, res) => {
     }
 
     const filePath = decrypt(sharedLink.filePath);
-    const upstream = await fetch(filePath);
+    const proxied = await pipeRemoteDocument(req, res, filePath, {
+      disposition: 'attachment'
+    });
 
-    if (!upstream.ok || !upstream.body) {
+    if (!proxied.ok) {
       return res.status(502).json({ success: false, message: 'Unable to fetch shared document' });
     }
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
 
-    const contentType = upstream.headers.get('content-type') || 'application/octet-stream';
-    const fileName = getDownloadFilename(contentType, getDocumentKind(filePath));
+const previewSharedDocument = async (req, res) => {
+  try {
+    const { token } = req.query;
+    const validation = validateDownloadToken(req.params.shareId, token);
 
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    if (validation.error) {
+      return res.status(401).json({ success: false, message: validation.error });
+    }
 
-    Readable.fromWeb(upstream.body).pipe(res);
+    const sharedLink = await SharedLink.findOne({ shareId: req.params.shareId });
+
+    if (!sharedLink) {
+      return res.status(404).json({ success: false, message: 'Share link not found' });
+    }
+
+    const filePath = decrypt(sharedLink.filePath);
+    const proxied = await pipeRemoteDocument(req, res, filePath, {
+      disposition: 'inline'
+    });
+
+    if (!proxied.ok) {
+      return res.status(502).json({ success: false, message: 'Unable to fetch shared document preview' });
+    }
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -195,5 +204,6 @@ module.exports = {
   createSharedLink,
   getSharedLinkInfo,
   verifySharedLinkPassword,
-  downloadSharedDocument
+  downloadSharedDocument,
+  previewSharedDocument
 };

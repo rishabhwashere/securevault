@@ -77,10 +77,35 @@ export function parseTags(value: string) {
     .filter(Boolean);
 }
 
+export type AttachmentKind = 'image' | 'pdf' | 'file';
+
+export function getAttachmentKindFromContentType(contentType?: string | null): AttachmentKind | null {
+  const normalized = (contentType || '').toLowerCase();
+
+  if (normalized.includes('application/pdf')) return 'pdf';
+  if (normalized.startsWith('image/')) return 'image';
+  return null;
+}
+
 export function getAttachmentKind(fileUrl: string) {
   if (/\.pdf(?:$|\?)/i.test(fileUrl)) return 'pdf';
   if (/\.(png|jpe?g|webp|gif|bmp|svg)(?:$|\?)/i.test(fileUrl)) return 'image';
   return 'file';
+}
+
+export async function detectAttachmentKind(fileUrl: string): Promise<AttachmentKind> {
+  try {
+    const headResponse = await fetch(fileUrl, { method: 'HEAD' });
+    const fromHead = getAttachmentKindFromContentType(headResponse.headers.get('content-type'));
+
+    if (headResponse.ok && fromHead) {
+      return fromHead;
+    }
+  } catch {
+    // Fall back to URL-based detection below.
+  }
+
+  return getAttachmentKind(fileUrl);
 }
 
 function getExtensionFromContentType(contentType: string) {
@@ -130,4 +155,20 @@ export async function downloadAttachment(fileUrl: string, baseName: string) {
 export async function downloadProtectedResource(resourceUrl: string, baseName: string, init?: RequestInit) {
   const response = await fetch(resourceUrl, init);
   await saveFetchedResource(response, baseName, resourceUrl);
+}
+
+export async function fetchProtectedResourceBlobUrl(resourceUrl: string, init?: RequestInit) {
+  const response = await fetch(resourceUrl, init);
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    throw new Error(payload?.message || 'Unable to load protected resource');
+  }
+
+  const blob = await response.blob();
+
+  return {
+    contentType: response.headers.get('content-type') || blob.type || '',
+    objectUrl: URL.createObjectURL(blob)
+  };
 }

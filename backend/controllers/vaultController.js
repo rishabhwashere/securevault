@@ -1,6 +1,7 @@
 const Vault = require('../models/vault');
 const ActivityLog = require('../models/activitylog');
 const { decrypt, encrypt } = require('../Utils/encryption');
+const { pipeRemoteDocument } = require('../Utils/remoteDocument');
 
 // Decrypt data when sending to frontend.
 const formatVaultEntry = (vaultEntry) => {
@@ -164,10 +165,85 @@ const deleteVaultEntry = async (req, res) => {
   }
 };
 
+async function resolveOwnedAttachment(req, res) {
+  const vaultEntry = await Vault.findById(req.params.id);
+
+  if (!vaultEntry) {
+    res.status(404).json({ success: false, message: 'Vault entry not found' });
+    return null;
+  }
+
+  if (vaultEntry.owner.toString() !== req.user._id.toString()) {
+    res.status(401).json({ success: false, message: 'Not authorized to access this attachment' });
+    return null;
+  }
+
+  const attachmentIndex = Number(req.params.attachmentIndex);
+
+  if (!Number.isInteger(attachmentIndex) || attachmentIndex < 0) {
+    res.status(400).json({ success: false, message: 'Invalid attachment index' });
+    return null;
+  }
+
+  const decryptedFiles = (vaultEntry.filePath || []).map((filePath) => decrypt(filePath));
+  const filePath = decryptedFiles[attachmentIndex];
+
+  if (!filePath) {
+    res.status(404).json({ success: false, message: 'Attachment not found' });
+    return null;
+  }
+
+  return {
+    filePath
+  };
+}
+
+const previewVaultAttachment = async (req, res) => {
+  try {
+    const attachment = await resolveOwnedAttachment(req, res);
+
+    if (!attachment) {
+      return;
+    }
+
+    const proxied = await pipeRemoteDocument(req, res, attachment.filePath, {
+      disposition: 'inline'
+    });
+
+    if (!proxied.ok) {
+      return res.status(502).json({ success: false, message: 'Unable to fetch attachment preview' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const downloadVaultAttachment = async (req, res) => {
+  try {
+    const attachment = await resolveOwnedAttachment(req, res);
+
+    if (!attachment) {
+      return;
+    }
+
+    const proxied = await pipeRemoteDocument(req, res, attachment.filePath, {
+      disposition: 'attachment'
+    });
+
+    if (!proxied.ok) {
+      return res.status(502).json({ success: false, message: 'Unable to fetch attachment' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   createVaultEntry,
   getVaultEntryById,
   getAllVaultEntries,
   updateVaultEntry,
-  deleteVaultEntry
+  deleteVaultEntry,
+  previewVaultAttachment,
+  downloadVaultAttachment
 };

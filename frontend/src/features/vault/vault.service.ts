@@ -11,7 +11,7 @@ async function request<T>(path: string, init: RequestInit = {}) {
   return payload as T;
 }
 
-function authHeaders(token: string) {
+export function authHeaders(token: string) {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 

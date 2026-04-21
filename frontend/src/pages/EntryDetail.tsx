@@ -5,8 +5,20 @@ import toast from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EntryForm } from '@/components/forms/EntryForm';
 import { Badge, Button, Card, Input, Modal } from '@/components/ui';
+import { useAuthStore } from '@/features/auth/auth.store';
+import { authHeaders } from '@/features/vault/vault.service';
 import { useCreateShareLink, useVaultEntry, useUpdateEntry } from '@/features/vault/useVault';
-import { copyToClipboard, downloadAttachment, formatDateTime, getAttachmentKind, maskValue, normalizeUrl } from '@/lib/utils';
+import {
+  copyToClipboard,
+  downloadProtectedResource,
+  formatDateTime,
+  fetchProtectedResourceBlobUrl,
+  getAttachmentKind,
+  getAttachmentKindFromContentType,
+  maskValue,
+  normalizeUrl,
+  type AttachmentKind
+} from '@/lib/utils';
 
 export function EntryDetailPage() {
   const navigate = useNavigate();
@@ -144,88 +156,25 @@ export function EntryDetailPage() {
             <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Attachments</p>
             <div className="mt-4 grid gap-3">
               {entry.filePath?.length ? (
-                entry.filePath.map((fileUrl, index) => {
-                  const kind = getAttachmentKind(fileUrl);
-                  const image = kind === 'image';
-                  const label = `Attachment ${index + 1}`;
-                  const downloadLabel = kind === 'pdf' ? 'Download PDF' : kind === 'image' ? 'Download image' : 'Download file';
-
-                  return (
-                    <div key={fileUrl} className="group rounded-xl border border-line bg-white/55 p-3 transition hover:border-brand/40 hover:bg-white/75">
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand">
-                          {image ? <FileImage className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-textPrimary">{label}</p>
-                          <p className="mt-1 text-xs text-textMuted">
-                            {kind === 'image' ? 'Image attachment' : kind === 'pdf' ? 'PDF document' : 'Stored attachment'}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => window.open(fileUrl, '_blank', 'noopener,noreferrer')}
-                            className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/80 hover:text-brand"
-                            aria-label={`Open ${label}`}
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShareTarget({ filePath: fileUrl, label });
-                              setSharePassword('');
-                              setGeneratedLink('');
-                            }}
-                            className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/80 hover:text-brand"
-                            aria-label={`Share ${label}`}
-                          >
-                            <Share2 className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              try {
-                                setDownloadingIndex(index);
-                                await downloadAttachment(fileUrl, label.toLowerCase().replace(/\s+/g, '-'));
-                                toast.success(`${downloadLabel} ready`);
-                              } catch (error) {
-                                const message = error instanceof Error ? error.message : 'Download failed';
-                                toast.error(message);
-                              } finally {
-                                setDownloadingIndex(null);
-                              }
-                            }}
-                            disabled={downloadingIndex === index}
-                            className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/80 hover:text-brand disabled:cursor-not-allowed disabled:opacity-60"
-                            aria-label={`${downloadLabel} for ${label}`}
-                          >
-                            <Download className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                      {image ? (
-                        <img src={fileUrl} alt={label} className="mt-3 h-32 w-full rounded-lg border border-line/70 object-cover" />
-                      ) : null}
-                      <div className="mt-3 flex items-center gap-3 text-xs text-textMuted">
-                        <span>{downloadLabel}</span>
-                        {downloadingIndex === index ? <span>Downloading...</span> : null}
-                      </div>
-                    </div>
-                  );
-                })
+                entry.filePath.map((fileUrl, index) => (
+                  <AttachmentCard
+                    key={fileUrl}
+                    entryId={entry._id}
+                    fileUrl={fileUrl}
+                    index={index}
+                    downloading={downloadingIndex === index}
+                    onDownloadStateChange={(active) => setDownloadingIndex(active ? index : null)}
+                    onShare={() => {
+                      const label = `Attachment ${index + 1}`;
+                      setShareTarget({ filePath: fileUrl, label });
+                      setSharePassword('');
+                      setGeneratedLink('');
+                    }}
+                  />
+                ))
               ) : (
                 <p className="text-sm text-textMuted">No files attached to this entry.</p>
               )}
-            </div>
-          </Card>
-
-          <Card className="rounded-xl">
-            <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Related context</p>
-            <div className="mt-4 space-y-3 text-sm text-textMuted">
-              <p>This MVP stores a lightweight activity summary in the right rail.</p>
-              <p>Detailed per-entry activity can expand from here once the backend logs are scoped by entry and user.</p>
             </div>
           </Card>
         </div>
@@ -370,6 +319,240 @@ function MetaItem({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg bg-white/55 p-4">
       <p className="text-xs uppercase tracking-[0.2em] text-textMuted">{label}</p>
       <p className="mt-2 text-sm font-medium text-textPrimary">{value}</p>
+    </div>
+  );
+}
+
+function AttachmentCard({
+  entryId,
+  fileUrl,
+  index,
+  downloading,
+  onDownloadStateChange,
+  onShare
+}: {
+  entryId: string;
+  fileUrl: string;
+  index: number;
+  downloading: boolean;
+  onDownloadStateChange: (active: boolean) => void;
+  onShare: () => void;
+}) {
+  const token = useAuthStore((state) => state.token);
+  const [kind, setKind] = useState<AttachmentKind>(() => getAttachmentKind(fileUrl));
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const label = `Attachment ${index + 1}`;
+  const image = kind === 'image';
+  const pdf = kind === 'pdf';
+  const downloadLabel = pdf ? 'Download PDF' : image ? 'Download image' : 'Download file';
+  const previewEndpoint = `/api/vault/${entryId}/attachments/${index}/preview`;
+
+  async function loadPreview() {
+    if (!token) {
+      throw new Error('Please log in again.');
+    }
+
+    setPreviewLoading(true);
+
+    try {
+      const { contentType, objectUrl } = await fetchProtectedResourceBlobUrl(previewEndpoint, {
+        headers: authHeaders(token)
+      });
+      const resolvedKind = getAttachmentKindFromContentType(contentType) || getAttachmentKind(fileUrl);
+
+      setKind(resolvedKind);
+      if (resolvedKind === 'file') {
+        setPreviewUrl((current) => {
+          if (current) {
+            URL.revokeObjectURL(current);
+          }
+          return '';
+        });
+      } else {
+        setPreviewUrl((current) => {
+          if (current) {
+            URL.revokeObjectURL(current);
+          }
+          return objectUrl;
+        });
+      }
+
+      return {
+        objectUrl,
+        kind: resolvedKind
+      };
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!token) {
+      setPreviewUrl((current) => {
+        if (current) {
+          URL.revokeObjectURL(current);
+        }
+        return '';
+      });
+      return;
+    }
+
+    let active = true;
+    let loadedObjectUrl = '';
+
+    loadPreview()
+      .then(({ objectUrl, kind: resolvedKind }) => {
+        if (!active) {
+          URL.revokeObjectURL(objectUrl);
+          return;
+        }
+
+        loadedObjectUrl = objectUrl;
+
+        if (resolvedKind === 'file') {
+          URL.revokeObjectURL(objectUrl);
+        }
+      })
+      .catch(() => {
+        if (!active) return;
+        setPreviewUrl((current) => {
+          if (current) {
+            URL.revokeObjectURL(current);
+          }
+          return '';
+        });
+      });
+
+    return () => {
+      active = false;
+      if (loadedObjectUrl) {
+        URL.revokeObjectURL(loadedObjectUrl);
+      }
+    };
+  }, [fileUrl, previewEndpoint, token]);
+
+  return (
+    <div className="group rounded-xl border border-line bg-white/55 p-3 transition hover:border-brand/40 hover:bg-white/75">
+      <div className="flex items-start gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand">
+          {image ? <FileImage className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-textPrimary">{label}</p>
+          <p className="mt-1 text-xs text-textMuted">
+            {image ? 'Image attachment' : pdf ? 'PDF document' : 'Stored attachment'}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={async () => {
+              let previewWindow: Window | null = null;
+
+              try {
+                if (previewUrl) {
+                  window.open(previewUrl, '_blank', 'noopener,noreferrer');
+                  return;
+                }
+
+                previewWindow = window.open('', '_blank', 'noopener,noreferrer');
+
+                const loadedPreview = await loadPreview();
+
+                if (loadedPreview.kind === 'file') {
+                  previewWindow?.close();
+                  await downloadProtectedResource(
+                    `/api/vault/${entryId}/attachments/${index}/download`,
+                    label.toLowerCase().replace(/\s+/g, '-'),
+                    {
+                      headers: authHeaders(token)
+                    }
+                  );
+                  toast.success(`${downloadLabel} ready`);
+                  return;
+                }
+
+                if (previewWindow) {
+                  previewWindow.location.href = loadedPreview.objectUrl;
+                } else {
+                  window.open(loadedPreview.objectUrl, '_blank', 'noopener,noreferrer');
+                }
+              } catch (error) {
+                previewWindow?.close();
+                const message = error instanceof Error ? error.message : 'Unable to open attachment';
+                toast.error(message);
+              }
+            }}
+            className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/80 hover:text-brand"
+            aria-label={`Open ${label}`}
+          >
+            <ExternalLink className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onShare}
+            className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/80 hover:text-brand"
+            aria-label={`Share ${label}`}
+          >
+            <Share2 className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                onDownloadStateChange(true);
+                await downloadProtectedResource(
+                  `/api/vault/${entryId}/attachments/${index}/download`,
+                  label.toLowerCase().replace(/\s+/g, '-'),
+                  {
+                    headers: authHeaders(token)
+                  }
+                );
+                toast.success(`${downloadLabel} ready`);
+              } catch (error) {
+                const message = error instanceof Error ? error.message : 'Download failed';
+                toast.error(message);
+              } finally {
+                onDownloadStateChange(false);
+              }
+            }}
+            disabled={downloading}
+            className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/80 hover:text-brand disabled:cursor-not-allowed disabled:opacity-60"
+            aria-label={`${downloadLabel} for ${label}`}
+          >
+            <Download className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      {image ? (
+        previewUrl ? (
+          <img src={previewUrl} alt={label} className="mt-3 h-32 w-full rounded-lg border border-line/70 object-cover" />
+        ) : (
+          <div className="mt-3 rounded-lg border border-dashed border-line/70 bg-white/70 px-4 py-6 text-sm text-textMuted">
+            Image preview unavailable.
+          </div>
+        )
+      ) : null}
+
+      {pdf ? (
+        previewUrl ? (
+          <div className="mt-3 overflow-hidden rounded-lg border border-line/70 bg-white">
+            <iframe src={previewUrl} title={`${label} preview`} className="h-72 w-full" />
+          </div>
+        ) : (
+          <div className="mt-3 rounded-lg border border-dashed border-line/70 bg-white/70 px-4 py-6 text-sm text-textMuted">
+            PDF preview unavailable.
+          </div>
+        )
+      ) : null}
+
+      <div className="mt-3 flex items-center gap-3 text-xs text-textMuted">
+        <span>{downloadLabel}</span>
+        {previewLoading ? <span>Loading preview...</span> : null}
+        {downloading ? <span>Downloading...</span> : null}
+      </div>
     </div>
   );
 }

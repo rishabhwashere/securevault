@@ -3,9 +3,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useParams } from 'react-router-dom';
 import { Button, Card, Input } from '@/components/ui';
-import { downloadProtectedResource } from '@/lib/utils';
-
-type ShareKind = 'image' | 'pdf' | 'file';
+import { downloadProtectedResource, type AttachmentKind } from '@/lib/utils';
 
 async function request<T>(path: string, init: RequestInit = {}) {
   const response = await fetch(path, init);
@@ -22,7 +20,7 @@ export function SharedLinkPage() {
   const { shareId = '' } = useParams();
   const [password, setPassword] = useState('');
   const [accessToken, setAccessToken] = useState('');
-  const [kind, setKind] = useState<ShareKind>('file');
+  const [kind, setKind] = useState<AttachmentKind>('file');
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [linkExists, setLinkExists] = useState(true);
@@ -30,7 +28,7 @@ export function SharedLinkPage() {
   useEffect(() => {
     let mounted = true;
 
-    request<{ data: { kind: ShareKind } }>(`/api/shared/${shareId}`)
+    request<{ data: { kind: AttachmentKind } }>(`/api/shared/${shareId}`)
       .then((payload) => {
         if (!mounted) return;
         setKind(payload.data.kind);
@@ -58,6 +56,7 @@ export function SharedLinkPage() {
   }
 
   const downloadLabel = kind === 'pdf' ? 'Download PDF' : kind === 'image' ? 'Download image' : 'Download file';
+  const previewUrl = accessToken ? `/api/shared/${shareId}/preview?token=${encodeURIComponent(accessToken)}` : '';
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -92,7 +91,7 @@ export function SharedLinkPage() {
                 onClick={async () => {
                   try {
                     setLoading(true);
-                    const payload = await request<{ data: { accessToken: string; kind: ShareKind }; message: string }>(
+                    const payload = await request<{ data: { accessToken: string; kind: AttachmentKind }; message: string }>(
                       `/api/shared/${shareId}/verify`,
                       {
                         method: 'POST',
@@ -143,6 +142,18 @@ export function SharedLinkPage() {
                 </Button>
               ) : null}
             </div>
+
+            {accessToken && kind === 'pdf' ? (
+              <div className="overflow-hidden rounded-xl border border-line bg-white/70">
+                <iframe src={previewUrl} title="Protected PDF preview" className="h-[500px] w-full" />
+              </div>
+            ) : null}
+
+            {accessToken && kind === 'image' ? (
+              <div className="overflow-hidden rounded-xl border border-line bg-white/70">
+                <img src={previewUrl} alt="Protected document preview" className="max-h-[500px] w-full object-contain" />
+              </div>
+            ) : null}
           </div>
         </Card>
       </div>
