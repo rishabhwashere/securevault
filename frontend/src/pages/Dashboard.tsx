@@ -86,7 +86,7 @@ export function DashboardPage({ createOpen = false }: DashboardPageProps) {
               placeholder="Search titles, usernames, notes, or URLs"
               className="flex-1 bg-transparent text-sm text-textPrimary outline-none placeholder:text-textMuted/70"
             />
-            <span className="hidden rounded-full border border-line bg-white/70 px-2 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-textMuted md:inline-flex">
+            <span className="hidden rounded-full border border-line bg-surface-muted px-2 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-textMuted md:inline-flex">
               Cmd+K
             </span>
           </label>
@@ -94,7 +94,7 @@ export function DashboardPage({ createOpen = false }: DashboardPageProps) {
           <div className="flex flex-wrap items-center gap-3">
             <Listbox value={selectedCategories} onChange={setSelectedCategories} multiple>
               <div className="relative">
-                <Listbox.Button className="focus-ring flex items-center gap-2 rounded-full border border-line bg-white/65 px-4 py-2 text-sm text-textPrimary">
+                <Listbox.Button className="focus-ring flex items-center gap-2 rounded-full border border-line bg-surface-soft px-4 py-2 text-sm text-textPrimary">
                   Category
                   <ChevronDown className="h-4 w-4 text-textMuted" />
                 </Listbox.Button>
@@ -106,7 +106,7 @@ export function DashboardPage({ createOpen = false }: DashboardPageProps) {
                         key={category}
                         value={category}
                         as="button"
-                        className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm text-textPrimary transition hover:bg-white/70"
+                        className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm text-textPrimary transition hover:bg-surface-raised"
                       >
                         <span className="flex items-center gap-2">
                           <span className="h-2.5 w-2.5 rounded-full bg-accent" />
@@ -122,7 +122,7 @@ export function DashboardPage({ createOpen = false }: DashboardPageProps) {
 
             <Listbox value={sort} onChange={setSort}>
               <div className="relative">
-                <Listbox.Button className="focus-ring flex items-center gap-2 rounded-full border border-line bg-white/65 px-4 py-2 text-sm text-textPrimary">
+                <Listbox.Button className="focus-ring flex items-center gap-2 rounded-full border border-line bg-surface-soft px-4 py-2 text-sm text-textPrimary">
                   {sortOptions.find((option) => option.value === sort)?.label}
                   <ChevronDown className="h-4 w-4 text-textMuted" />
                 </Listbox.Button>
@@ -131,7 +131,7 @@ export function DashboardPage({ createOpen = false }: DashboardPageProps) {
                     <Listbox.Option
                       key={option.value}
                       value={option.value}
-                      className="cursor-pointer rounded-md px-3 py-2 text-sm text-textPrimary transition hover:bg-white/70"
+                      className="cursor-pointer rounded-md px-3 py-2 text-sm text-textPrimary transition hover:bg-surface-raised"
                     >
                       {option.label}
                     </Listbox.Option>

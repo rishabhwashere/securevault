@@ -102,7 +102,7 @@ export function ProfilePage() {
       <Card className="rounded-xl">
         <form onSubmit={handleSubmit} className="grid gap-6">
           <div className="flex flex-wrap items-center gap-6">
-            <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-line bg-white/70 text-lg font-semibold text-textPrimary">
+            <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-line bg-surface-raised text-lg font-semibold text-textPrimary">
               {previewUrl ? (
                 <img src={previewUrl} alt="Profile" className="h-full w-full object-cover" />
               ) : (

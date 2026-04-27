@@ -27,7 +27,7 @@ export function Sidebar({ stats }: SidebarProps) {
               end={item.to === '/vault'}
               className={({ isActive }) =>
                 `focus-ring flex items-center gap-3 rounded-md px-4 py-3.5 text-lg font-medium transition ${
-                  isActive ? 'bg-brand text-white shadow-soft' : 'text-textMuted hover:bg-white/60 hover:text-brand'
+                  isActive ? 'bg-brand text-background shadow-soft' : 'text-textMuted hover:bg-surface-soft hover:text-brand'
                 }`
               }
             >

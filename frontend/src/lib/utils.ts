@@ -39,6 +39,31 @@ export function formatDateTime(dateLike?: string | Date | null) {
   }).format(value);
 }
 
+export function isUnlockPending(unlockAt?: string | Date | null) {
+  if (!unlockAt) return false;
+  const value = typeof unlockAt === 'string' ? new Date(unlockAt) : unlockAt;
+
+  if (Number.isNaN(value.getTime())) {
+    return false;
+  }
+
+  return value.getTime() > Date.now();
+}
+
+export function toDateTimeInputValue(dateLike?: string | Date | null) {
+  if (!dateLike) return '';
+
+  const value = typeof dateLike === 'string' ? new Date(dateLike) : dateLike;
+
+  if (Number.isNaN(value.getTime())) {
+    return '';
+  }
+
+  const pad = (part: number) => String(part).padStart(2, '0');
+
+  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}T${pad(value.getHours())}:${pad(value.getMinutes())}`;
+}
+
 export function truncate(text: string, max = 120) {
   if (text.length <= max) return text;
   return `${text.slice(0, max).trim()}...`;

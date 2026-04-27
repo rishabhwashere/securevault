@@ -18,6 +18,7 @@ export interface VaultEntry {
   data?: string;
   tags?: string[];
   filePath?: string[];
+  unlockAt?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -32,6 +33,7 @@ export interface EntryPayload {
   data?: string;
   tags?: string[];
   files?: File[];
+  unlockAt?: string;
 }
 
 export interface VaultStats {

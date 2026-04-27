@@ -43,7 +43,7 @@ export function OTPInput({ value, onChange, error }: OTPInputProps) {
               }
             }}
             className={cn(
-              'focus-ring h-14 w-12 rounded-md border bg-white/70 text-center font-heading text-xl text-textPrimary transition',
+              'focus-ring h-14 w-12 rounded-md border bg-surface-raised text-center font-heading text-xl text-textPrimary transition',
               error ? 'border-danger/50' : 'border-line focus:border-brand'
             )}
           />

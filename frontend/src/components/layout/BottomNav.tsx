@@ -18,7 +18,7 @@ export function BottomNav() {
             end={item.to === '/vault'}
             className={({ isActive }) =>
               `focus-ring flex flex-col items-center gap-1 rounded-full px-3 py-2 text-xs font-medium transition ${
-                isActive ? 'bg-brand text-white' : 'text-textMuted'
+                isActive ? 'bg-brand text-background' : 'text-textMuted'
               }`
             }
           >

@@ -20,7 +20,7 @@ export function TopBar() {
         </Link>
 
         <div className="hidden flex-1 items-center md:flex">
-          <label className="focus-within:shadow-focus flex w-full max-w-xl items-center gap-3 rounded-full border border-line bg-white/65 px-4 py-2 transition focus-within:border-brand">
+          <label className="focus-within:shadow-focus flex w-full max-w-xl items-center gap-3 rounded-full border border-line bg-surface px-4 py-2 transition focus-within:border-brand">
             <Search className="h-4 w-4 text-textMuted" />
             <input
               value={search}
@@ -33,8 +33,8 @@ export function TopBar() {
 
         <div className="ml-auto flex items-center gap-3">
           <Menu as="div" className="relative">
-            <MenuButton className="focus-ring flex items-center gap-3 rounded-full border border-line bg-white/60 py-1.5 pl-1.5 pr-3 transition hover:border-brand/40">
-              <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-brand text-xs font-semibold text-white">
+            <MenuButton className="focus-ring flex items-center gap-3 rounded-full border border-line bg-surface-soft py-1.5 pl-1.5 pr-3 transition hover:border-brand/40 hover:bg-surface-raised">
+              <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-brand text-xs font-semibold text-background">
                 {user?.avatarUrl ? (
                   <img src={user.avatarUrl} alt={user?.name ?? 'Profile'} className="h-full w-full object-cover" />
                 ) : (
@@ -54,7 +54,7 @@ export function TopBar() {
                     type="button"
                     onClick={() => navigate('/vault/profile')}
                     className={`focus-ring flex w-full items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
-                      focus ? 'bg-brand text-white' : 'text-textPrimary hover:bg-white/70'
+                      focus ? 'bg-brand text-background' : 'text-textPrimary hover:bg-surface-raised'
                     }`}
                   >
                     <UserCircle2 className="h-4 w-4" />
@@ -68,7 +68,7 @@ export function TopBar() {
                     type="button"
                     onClick={logout}
                     className={`focus-ring flex w-full items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
-                      focus ? 'bg-brand text-white' : 'text-textPrimary hover:bg-white/70'
+                      focus ? 'bg-brand text-background' : 'text-textPrimary hover:bg-surface-raised'
                     }`}
                   >
                     <LogOut className="h-4 w-4" />

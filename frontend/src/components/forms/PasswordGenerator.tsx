@@ -66,7 +66,7 @@ export function PasswordGenerator({ onUse }: PasswordGeneratorProps) {
             </div>
             <button
               type="button"
-              className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/60 hover:text-brand"
+              className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-surface-raised hover:text-brand"
               onClick={() => setPassword(generatePassword({ length, uppercase, lowercase, numbers, symbols }))}
               aria-label="Generate another password"
             >
@@ -93,7 +93,7 @@ export function PasswordGenerator({ onUse }: PasswordGeneratorProps) {
             <Toggle checked={numbers} onChange={setNumbers} label="Numbers" />
             <Toggle checked={symbols} onChange={setSymbols} label="Symbols" />
 
-            <div className="rounded-md border border-line bg-white/60 p-3">
+            <div className="rounded-md border border-line bg-surface p-3">
               <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Generated password</p>
               <p className="mt-2 break-all font-medium text-textPrimary">{password || 'Choose at least one option'}</p>
             </div>

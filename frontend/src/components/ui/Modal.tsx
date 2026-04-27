@@ -14,7 +14,7 @@ export function Modal({ open, onClose, children }: ModalProps) {
       {open ? (
         <Dialog open={open} onClose={onClose} className="relative z-[70]">
           <motion.div
-            className="fixed inset-0 bg-textPrimary/20 backdrop-blur-sm"
+            className="fixed inset-0 bg-background/75 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

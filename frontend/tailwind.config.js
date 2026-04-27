@@ -10,26 +10,33 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: '#f4efe8',
-        panel: 'rgba(255,250,245,0.88)',
+        background: '#090909',
+        panel: 'rgba(16,16,16,0.92)',
+        surface: {
+          DEFAULT: '#151515',
+          raised: '#222222',
+          soft: 'rgba(27,27,27,0.92)',
+          muted: 'rgba(255,255,255,0.06)',
+          sunken: '#0f0f0f'
+        },
         brand: {
-          DEFAULT: '#1f6b5f',
-          deep: '#184f46',
-          light: '#e8f4f1',
-          muted: 'rgba(31,107,95,0.12)'
+          DEFAULT: '#f3f3f3',
+          deep: '#d2d2d2',
+          light: 'rgba(255,255,255,0.14)',
+          muted: 'rgba(255,255,255,0.1)'
         },
         accent: {
-          DEFAULT: '#c78646',
-          light: '#fdf3e6',
-          muted: 'rgba(199,134,70,0.12)'
+          DEFAULT: '#a8a8a8',
+          light: 'rgba(255,255,255,0.1)',
+          muted: 'rgba(255,255,255,0.08)'
         },
         danger: {
-          DEFAULT: '#a93d32',
-          light: 'rgba(169,61,50,0.08)'
+          DEFAULT: '#d8d8d8',
+          light: 'rgba(255,255,255,0.1)'
         },
-        line: 'rgba(85,62,42,0.12)',
-        textPrimary: '#1f1a17',
-        textMuted: '#65574d'
+        line: 'rgba(255,255,255,0.1)',
+        textPrimary: '#f4f4f4',
+        textMuted: '#8c8c8c'
       },
       fontFamily: {
         sans: ['"Instrument Sans"', 'system-ui', 'sans-serif'],
@@ -42,9 +49,9 @@ module.exports = {
         sm: '10px'
       },
       boxShadow: {
-        card: '0 24px 70px rgba(84,61,41,0.14)',
-        soft: '0 16px 34px rgba(57,40,25,0.10)',
-        focus: '0 0 0 4px rgba(31,107,95,0.12)'
+        card: '0 28px 80px rgba(0,0,0,0.38)',
+        soft: '0 18px 42px rgba(0,0,0,0.28)',
+        focus: '0 0 0 4px rgba(255,255,255,0.12)'
       },
       backdropBlur: {
         panel: '16px'

@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const Vault = require('../models/vault');
 const SharedLink = require('../models/sharedLink');
 const { decrypt } = require('../Utils/encryption');
+const { enforceVaultUnlock } = require('../Utils/lockAccess');
 const { pipeRemoteDocument, resolveDocumentKind } = require('../Utils/remoteDocument');
 
 function decryptFileList(filePaths = []) {
@@ -30,6 +31,10 @@ const createSharedLink = async (req, res) => {
 
     if (vaultEntry.owner.toString() !== req.user._id.toString()) {
       return res.status(401).json({ success: false, message: 'Not authorized to share documents from this entry' });
+    }
+
+    if (await enforceVaultUnlock(req, res, vaultEntry, 'create a shared link')) {
+      return;
     }
 
     const decryptedFiles = decryptFileList(vaultEntry.filePath || []);
@@ -159,6 +164,16 @@ const downloadSharedDocument = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Share link not found' });
     }
 
+    const vaultEntry = await Vault.findById(sharedLink.vault);
+
+    if (!vaultEntry) {
+      return res.status(404).json({ success: false, message: 'Vault entry not found' });
+    }
+
+    if (await enforceVaultUnlock(req, res, vaultEntry, 'download a shared document')) {
+      return;
+    }
+
     const filePath = decrypt(sharedLink.filePath);
     const proxied = await pipeRemoteDocument(req, res, filePath, {
       disposition: 'attachment'
@@ -185,6 +200,16 @@ const previewSharedDocument = async (req, res) => {
 
     if (!sharedLink) {
       return res.status(404).json({ success: false, message: 'Share link not found' });
+    }
+
+    const vaultEntry = await Vault.findById(sharedLink.vault);
+
+    if (!vaultEntry) {
+      return res.status(404).json({ success: false, message: 'Vault entry not found' });
+    }
+
+    if (await enforceVaultUnlock(req, res, vaultEntry, 'preview a shared document')) {
+      return;
     }
 
     const filePath = decrypt(sharedLink.filePath);

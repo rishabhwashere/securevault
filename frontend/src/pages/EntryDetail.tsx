@@ -1,4 +1,4 @@
-import { Copy, Download, ExternalLink, Eye, EyeOff, FileImage, FileText, Pencil, Share2 } from 'lucide-react';
+import { AlertTriangle, Copy, Download, ExternalLink, Eye, EyeOff, FileImage, FileText, LockKeyhole, Pencil, Share2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import toast from 'react-hot-toast';
@@ -6,7 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { EntryForm } from '@/components/forms/EntryForm';
 import { Badge, Button, Card, Input, Modal } from '@/components/ui';
 import { useAuthStore } from '@/features/auth/auth.store';
-import { authHeaders } from '@/features/vault/vault.service';
+import { ApiError, authHeaders } from '@/features/vault/vault.service';
 import { useCreateShareLink, useVaultEntry, useUpdateEntry } from '@/features/vault/useVault';
 import {
   copyToClipboard,
@@ -15,6 +15,7 @@ import {
   fetchProtectedResourceBlobUrl,
   getAttachmentKind,
   getAttachmentKindFromContentType,
+  isUnlockPending,
   maskValue,
   normalizeUrl,
   type AttachmentKind
@@ -34,6 +35,10 @@ export function EntryDetailPage() {
   const [sharePassword, setSharePassword] = useState('');
   const [generatedLink, setGeneratedLink] = useState('');
   const entry = entryQuery.data;
+  const queryError = entryQuery.error;
+  const errorMessage = queryError instanceof Error ? queryError.message : '';
+  const locked = isUnlockPending(entry?.unlockAt);
+  const lockedError = queryError instanceof ApiError && queryError.status === 403;
 
   useEffect(() => {
     if (!revealed) {
@@ -54,11 +59,88 @@ export function EntryDetailPage() {
     return () => window.clearInterval(timer);
   }, [revealed]);
 
-  if (!entry) {
+  if (entryQuery.isLoading && !entry) {
     return (
       <Card className="rounded-xl">
         <p className="text-sm text-textMuted">Loading entry details...</p>
       </Card>
+    );
+  }
+
+  if (!entry && queryError) {
+    return (
+      <div className="space-y-6">
+        <Card className="rounded-xl border border-danger/20 bg-danger/5">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 text-danger" />
+            <div className="space-y-2">
+              <h1 className="font-heading text-2xl text-textPrimary">
+                {lockedError ? 'Entry is locked' : 'Unable to load this entry'}
+              </h1>
+              <p className="text-sm leading-6 text-textMuted">
+                {errorMessage || 'Please try again in a moment.'}
+              </p>
+            </div>
+          </div>
+        </Card>
+        <Button variant="ghost" onClick={() => navigate('/vault')}>
+          Back to vault
+        </Button>
+      </div>
+    );
+  }
+
+  if (!entry) {
+    return null;
+  }
+
+  if (locked) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <Badge>{entry.category || 'General'}</Badge>
+            <h1 className="mt-4 font-heading text-4xl text-textPrimary">{entry.title}</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-textMuted">
+              This entry is time-locked. Sensitive content and attachments will unlock automatically when the scheduled time arrives.
+            </p>
+          </div>
+          <Button variant="ghost" onClick={() => navigate('/vault')}>
+            Back to vault
+          </Button>
+        </div>
+
+        <Card className="rounded-xl border border-brand/20 bg-brand-light/40">
+          <div className="flex items-start gap-3">
+            <LockKeyhole className="mt-0.5 h-5 w-5 text-brand" />
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Scheduled unlock</p>
+              <h2 className="font-heading text-2xl text-textPrimary">{formatDateTime(entry.unlockAt)}</h2>
+              <p className="text-sm text-textMuted">
+                {lockedError ? errorMessage : `Document is locked until ${formatDateTime(entry.unlockAt)}`}
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+          <Card className="space-y-5 rounded-xl">
+            <DetailRow label="Status" value="Locked" />
+            <DetailRow label="Content" value="Sensitive fields are hidden until the unlock time passes." multiline />
+          </Card>
+
+          <Card className="rounded-xl">
+            <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Metadata</p>
+            <div className="mt-4 grid gap-4">
+              <MetaItem label="Created" value={formatDateTime(entry.createdAt)} />
+              <MetaItem label="Updated" value={formatDateTime(entry.updatedAt)} />
+              <MetaItem label="Unlocks" value={formatDateTime(entry.unlockAt)} />
+              <MetaItem label="Attachments" value={`${entry.filePath?.length ?? 0} files`} />
+              <MetaItem label="Tags" value={entry.tags?.join(', ') || 'None'} />
+            </div>
+          </Card>
+        </div>
+      </div>
     );
   }
 
@@ -81,7 +163,7 @@ export function EntryDetailPage() {
             <button
               type="button"
               onClick={() => window.open(normalizeUrl(entry.url || ''), '_blank', 'noopener,noreferrer')}
-              className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/70 hover:text-brand"
+              className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-surface-raised hover:text-brand"
               aria-label="Open website"
             >
               <ExternalLink className="h-4 w-4" />
@@ -97,7 +179,7 @@ export function EntryDetailPage() {
                   onClick={async () => {
                     if (await copyToClipboard(entry.username || '')) toast.success('Username copied');
                   }}
-                  className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/70 hover:text-brand"
+                  className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-surface-raised hover:text-brand"
                   aria-label="Copy username"
                 >
                   <Copy className="h-4 w-4" />
@@ -114,7 +196,7 @@ export function EntryDetailPage() {
                   <button
                     type="button"
                     onClick={() => setRevealed((value) => !value)}
-                    className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/70 hover:text-brand"
+                    className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-surface-raised hover:text-brand"
                     aria-label={revealed ? 'Hide password' : 'Reveal password'}
                   >
                     {revealed ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -124,7 +206,7 @@ export function EntryDetailPage() {
                     onClick={async () => {
                       if (await copyToClipboard(entry.password || '')) toast.success('Password copied');
                     }}
-                    className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/70 hover:text-brand"
+                    className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-surface-raised hover:text-brand"
                     aria-label="Copy password"
                   >
                     <Copy className="h-4 w-4" />
@@ -147,6 +229,7 @@ export function EntryDetailPage() {
             <div className="mt-4 grid gap-4">
               <MetaItem label="Created" value={formatDateTime(entry.createdAt)} />
               <MetaItem label="Updated" value={formatDateTime(entry.updatedAt)} />
+              <MetaItem label="Unlocks" value={formatDateTime(entry.unlockAt)} />
               <MetaItem label="Attachments" value={`${entry.filePath?.length ?? 0} files`} />
               <MetaItem label="Tags" value={entry.tags?.join(', ') || 'None'} />
             </div>
@@ -183,7 +266,7 @@ export function EntryDetailPage() {
       <button
         type="button"
         onClick={() => setEditing(true)}
-        className="focus-ring fixed bottom-24 right-6 z-40 inline-flex items-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-medium text-white shadow-card transition hover:-translate-y-px lg:bottom-8"
+        className="focus-ring fixed bottom-24 right-6 z-40 inline-flex items-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-medium text-background shadow-card transition hover:-translate-y-px lg:bottom-8"
       >
         <Pencil className="h-4 w-4" />
         Edit
@@ -307,7 +390,7 @@ function DetailRow({
         <p className="text-xs uppercase tracking-[0.22em] text-textMuted">{label}</p>
         {action}
       </div>
-      <div className={multiline ? 'rounded-lg bg-white/60 p-4 text-sm leading-7 text-textPrimary' : 'text-lg font-medium text-textPrimary'}>
+      <div className={multiline ? 'rounded-lg bg-surface p-4 text-sm leading-7 text-textPrimary' : 'text-lg font-medium text-textPrimary'}>
         {value || 'Not provided'}
       </div>
     </div>
@@ -316,7 +399,7 @@ function DetailRow({
 
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-white/55 p-4">
+    <div className="rounded-lg bg-surface-soft p-4">
       <p className="text-xs uppercase tracking-[0.2em] text-textMuted">{label}</p>
       <p className="mt-2 text-sm font-medium text-textPrimary">{value}</p>
     </div>
@@ -433,7 +516,7 @@ function AttachmentCard({
   }, [fileUrl, previewEndpoint, token]);
 
   return (
-    <div className="group rounded-xl border border-line bg-white/55 p-3 transition hover:border-brand/40 hover:bg-white/75">
+    <div className="group rounded-xl border border-line bg-surface-soft p-3 transition hover:border-brand/40 hover:bg-surface-raised">
       <div className="flex items-start gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand">
           {image ? <FileImage className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
@@ -484,7 +567,7 @@ function AttachmentCard({
                 toast.error(message);
               }
             }}
-            className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/80 hover:text-brand"
+            className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-surface-raised hover:text-brand"
             aria-label={`Open ${label}`}
           >
             <ExternalLink className="h-4 w-4" />
@@ -492,7 +575,7 @@ function AttachmentCard({
           <button
             type="button"
             onClick={onShare}
-            className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/80 hover:text-brand"
+            className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-surface-raised hover:text-brand"
             aria-label={`Share ${label}`}
           >
             <Share2 className="h-4 w-4" />
@@ -518,7 +601,7 @@ function AttachmentCard({
               }
             }}
             disabled={downloading}
-            className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/80 hover:text-brand disabled:cursor-not-allowed disabled:opacity-60"
+            className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-surface-raised hover:text-brand disabled:cursor-not-allowed disabled:opacity-60"
             aria-label={`${downloadLabel} for ${label}`}
           >
             <Download className="h-4 w-4" />
@@ -530,7 +613,7 @@ function AttachmentCard({
         previewUrl ? (
           <img src={previewUrl} alt={label} className="mt-3 h-32 w-full rounded-lg border border-line/70 object-cover" />
         ) : (
-          <div className="mt-3 rounded-lg border border-dashed border-line/70 bg-white/70 px-4 py-6 text-sm text-textMuted">
+          <div className="mt-3 rounded-lg border border-dashed border-line/70 bg-surface-muted px-4 py-6 text-sm text-textMuted">
             Image preview unavailable.
           </div>
         )
@@ -538,11 +621,11 @@ function AttachmentCard({
 
       {pdf ? (
         previewUrl ? (
-          <div className="mt-3 overflow-hidden rounded-lg border border-line/70 bg-white">
+          <div className="mt-3 overflow-hidden rounded-lg border border-line/70 bg-surface-raised">
             <iframe src={previewUrl} title={`${label} preview`} className="h-72 w-full" />
           </div>
         ) : (
-          <div className="mt-3 rounded-lg border border-dashed border-line/70 bg-white/70 px-4 py-6 text-sm text-textMuted">
+          <div className="mt-3 rounded-lg border border-dashed border-line/70 bg-surface-muted px-4 py-6 text-sm text-textMuted">
             PDF preview unavailable.
           </div>
         )

@@ -10,19 +10,33 @@
   }
 
   html {
-    color-scheme: light;
+    color-scheme: dark;
   }
 
   body {
     @apply min-h-screen bg-background font-sans text-textPrimary antialiased;
     background-image:
-      radial-gradient(circle at top left, rgba(31, 107, 95, 0.16), transparent 24%),
-      radial-gradient(circle at top right, rgba(199, 134, 70, 0.14), transparent 28%),
-      linear-gradient(180deg, #f8f2eb 0%, #f3ebe1 100%);
+      radial-gradient(circle at 16% 10%, rgba(255, 255, 255, 0.08) 0%, transparent 22%),
+      radial-gradient(circle at 88% 6%, rgba(120, 120, 120, 0.12) 0%, transparent 26%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 26%),
+      linear-gradient(180deg, #111111 0%, #080808 100%);
+    background-attachment: fixed;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.008) 0 2px, transparent 2px 8px),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.18));
+    mix-blend-mode: screen;
+    opacity: 0.45;
   }
 
   #root {
-    @apply min-h-screen;
+    @apply relative min-h-screen isolate;
   }
 
   ::selection {
@@ -33,15 +47,16 @@
 @layer components {
   .glass-panel {
     @apply border border-line bg-panel shadow-soft backdrop-blur-panel;
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0));
   }
 
   .focus-ring {
-    @apply focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/15;
+    @apply focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/20;
   }
 
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: rgba(31, 107, 95, 0.3) transparent;
+    scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
@@ -54,7 +69,20 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: rgba(31, 107, 95, 0.22);
+    background: rgba(255, 255, 255, 0.18);
     border-radius: 999px;
+  }
+
+  .surface-field {
+    @apply border border-line bg-surface text-textPrimary backdrop-blur-sm;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  }
+
+  .surface-card {
+    @apply border border-line bg-surface-soft;
+  }
+
+  .surface-chip {
+    @apply border border-line/80 bg-surface-muted text-textMuted;
   }
 }

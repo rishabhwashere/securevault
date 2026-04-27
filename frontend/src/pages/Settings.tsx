@@ -26,8 +26,8 @@ export function SettingsPage() {
           <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Interface</p>
           <div className="mt-5 grid gap-4">
             <Toggle checked={compactCards} onChange={setCompactCards} label="Use compact vault cards" />
-            <div className="rounded-lg bg-white/60 p-4 text-sm leading-7 text-textMuted">
-              Motion honors the operating system reduced-motion preference through Framer Motion’s user setting at the app root.
+            <div className="rounded-lg bg-surface p-4 text-sm leading-7 text-textMuted">
+              Motion honors the operating system reduced-motion preference through Framer Motion's user setting at the app root.
             </div>
           </div>
         </Card>

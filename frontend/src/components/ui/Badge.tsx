@@ -11,12 +11,12 @@ interface BadgeProps {
 export function Badge({ children, variant = 'category', statusTone = 'active', className }: BadgeProps) {
   const styles =
     variant === 'category'
-      ? 'border border-accent/20 bg-accent-light text-accent'
+      ? 'border border-accent/25 bg-accent-light text-accent'
       : statusTone === 'flagged'
-        ? 'border border-danger/20 bg-danger/10 text-danger'
+        ? 'border border-danger/25 bg-danger/10 text-danger'
         : statusTone === 'archived'
-          ? 'border border-line bg-white/60 text-textMuted'
-          : 'border border-brand/20 bg-brand-light text-brand';
+          ? 'border border-line bg-surface-muted text-textMuted'
+          : 'border border-brand/25 bg-brand-light text-brand';
 
   return (
     <span

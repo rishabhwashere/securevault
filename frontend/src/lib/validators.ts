@@ -28,7 +28,12 @@ export const entrySchema = z.object({
   username: z.string().optional().or(z.literal('')),
   password: z.string().optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
-  tagsText: z.string().optional().or(z.literal(''))
+  tagsText: z.string().optional().or(z.literal('')),
+  unlockAt: z
+    .string()
+    .optional()
+    .or(z.literal(''))
+    .refine((value) => !value || !Number.isNaN(new Date(value).getTime()), 'Choose a valid unlock date and time')
 });
 
 export type LoginValues = z.infer<typeof loginSchema>;

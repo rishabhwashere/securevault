@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import { Button, Input, Textarea } from '@/components/ui';
 import { defaultCategories } from '@/lib/constants';
 import { slideRight } from '@/lib/motion';
-import { copyToClipboard, normalizeUrl, parseTags } from '@/lib/utils';
+import { copyToClipboard, normalizeUrl, parseTags, toDateTimeInputValue } from '@/lib/utils';
 import { entrySchema, type EntryValues } from '@/lib/validators';
 import type { VaultEntry } from '@/features/vault/vault.types';
 import { FileUpload } from './FileUpload';
@@ -29,6 +29,7 @@ interface EntryFormProps {
     data?: string;
     tags?: string[];
     files?: File[];
+    unlockAt?: string;
   }) => Promise<void>;
 }
 
@@ -45,7 +46,8 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
       username: '',
       password: '',
       notes: '',
-      tagsText: ''
+      tagsText: '',
+      unlockAt: ''
     }
   });
 
@@ -58,7 +60,8 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
         username: '',
         password: '',
         notes: '',
-        tagsText: ''
+        tagsText: '',
+        unlockAt: ''
       });
       setFiles([]);
       return;
@@ -71,7 +74,8 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
       username: entry.username || '',
       password: entry.password || '',
       notes: entry.notes || entry.data || '',
-      tagsText: entry.tags?.join(', ') || ''
+      tagsText: entry.tags?.join(', ') || '',
+      unlockAt: toDateTimeInputValue(entry.unlockAt)
     });
     setFiles([]);
   }, [entry, form, open]);
@@ -91,7 +95,8 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
       notes: values.notes || '',
       data: values.notes || '',
       tags: parseTags(values.tagsText || ''),
-      files
+      files,
+      unlockAt: values.unlockAt || ''
     });
     onClose();
   }
@@ -108,7 +113,7 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-textPrimary/30 backdrop-blur-sm" />
+          <div className="fixed inset-0 bg-background/75 backdrop-blur-sm" />
         </TransitionChild>
 
         <div className="fixed inset-0 overflow-hidden">
@@ -131,7 +136,7 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
                   <button
                     type="button"
                     onClick={onClose}
-                    className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/70 hover:text-brand"
+                    className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-surface-raised hover:text-brand"
                     aria-label="Close panel"
                   >
                     <X className="h-5 w-5" />
@@ -152,7 +157,7 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
                         <span className="text-xs font-medium uppercase tracking-[0.22em]">Category</span>
                         <input
                           list="vault-categories"
-                          className="focus-ring rounded-md border border-line bg-white/60 px-3 py-2.5 text-sm text-textPrimary transition placeholder:text-textMuted/70 focus:border-brand focus:shadow-focus"
+                          className="focus-ring rounded-md border border-line bg-surface px-3 py-2.5 text-sm text-textPrimary transition placeholder:text-textMuted/70 focus:border-brand focus:shadow-focus"
                           placeholder="Choose or create a category"
                           {...form.register('category')}
                         />
@@ -258,6 +263,13 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
                         error={form.formState.errors.tagsText?.message}
                         leftAdornment={<Link2 className="h-4 w-4 text-textMuted" />}
                         {...form.register('tagsText')}
+                      />
+                      <Input
+                        label="Unlock at"
+                        type="datetime-local"
+                        hint="Leave blank to make this entry available immediately."
+                        error={form.formState.errors.unlockAt?.message}
+                        {...form.register('unlockAt')}
                       />
                     </section>
 

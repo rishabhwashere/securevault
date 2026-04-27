@@ -144,13 +144,13 @@ export function SharedLinkPage() {
             </div>
 
             {accessToken && kind === 'pdf' ? (
-              <div className="overflow-hidden rounded-xl border border-line bg-white/70">
+              <div className="overflow-hidden rounded-xl border border-line bg-surface-raised">
                 <iframe src={previewUrl} title="Protected PDF preview" className="h-[500px] w-full" />
               </div>
             ) : null}
 
             {accessToken && kind === 'image' ? (
-              <div className="overflow-hidden rounded-xl border border-line bg-white/70">
+              <div className="overflow-hidden rounded-xl border border-line bg-surface-raised">
                 <img src={previewUrl} alt="Protected document preview" className="max-h-[500px] w-full object-contain" />
               </div>
             ) : null}

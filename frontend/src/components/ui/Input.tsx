@@ -28,7 +28,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         ) : null}
         <span
           className={cn(
-            'flex items-center gap-2 rounded-md border bg-white/60 px-3 py-2.5 text-textPrimary shadow-sm backdrop-blur-sm transition-all duration-200',
+            'surface-field flex items-center gap-2 rounded-md px-3 py-2.5 transition-all duration-200',
             error ? 'border-danger/50' : 'border-line focus-within:border-brand focus-within:shadow-focus',
             className
           )}

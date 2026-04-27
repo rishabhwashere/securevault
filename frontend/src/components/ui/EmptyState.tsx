@@ -31,7 +31,7 @@ export function EmptyState({
           <button
             type="button"
             onClick={onSecondaryAction}
-            className="focus-ring text-sm font-medium text-brand transition hover:text-brand-deep"
+            className="focus-ring text-sm font-medium text-accent transition hover:text-brand"
           >
             {secondaryLabel}
           </button>

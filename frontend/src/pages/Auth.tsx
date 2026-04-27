@@ -1,6 +1,5 @@
 import { Navigate } from 'react-router-dom';
 import { AuthPanel } from '@/components/auth/AuthPanel';
-import { VaultXLogo } from '@/components/auth/VaultXLogo';
 import { useAuthStore } from '@/features/auth/auth.store';
 
 export function AuthPage() {
@@ -16,11 +15,7 @@ export function AuthPage() {
       <div className="pointer-events-none absolute right-[-120px] top-[220px] h-[340px] w-[340px] rounded-full bg-accent/20 blur-3xl" />
 
       <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-7xl flex-col items-center">
-        <div className="pt-2 sm:pt-3">
-          <VaultXLogo />
-        </div>
-
-        <div className="flex w-full flex-1 items-start justify-center pt-8 sm:pt-10">
+        <div className="flex w-full flex-1 items-start justify-center pt-12 sm:pt-16">
           <section className="mx-auto w-full max-w-xl">
             <AuthPanel />
           </section>

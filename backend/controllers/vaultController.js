@@ -1,22 +1,39 @@
 const Vault = require('../models/vault');
 const ActivityLog = require('../models/activitylog');
 const { decrypt, encrypt } = require('../Utils/encryption');
+const { enforceVaultUnlock } = require('../Utils/lockAccess');
 const { pipeRemoteDocument } = require('../Utils/remoteDocument');
+const { normalizeUnlockAt, isVaultLocked } = require('../Utils/timeLock');
 
 // Decrypt data when sending to frontend.
-const formatVaultEntry = (vaultEntry) => {
+const formatVaultEntry = (vaultEntry, options = {}) => {
+  const { redactLocked = false } = options;
   const formattedEntry = vaultEntry.toObject();
+  const fileCount = Array.isArray(formattedEntry.filePath) ? formattedEntry.filePath.length : 0;
+  const locked = isVaultLocked(formattedEntry);
+
   formattedEntry.title = decrypt(formattedEntry.title);
   formattedEntry.data = decrypt(formattedEntry.data);
   formattedEntry.password = decrypt(formattedEntry.password);
   formattedEntry.notes = decrypt(formattedEntry.notes);
+
+  if (redactLocked && locked) {
+    formattedEntry.url = '';
+    formattedEntry.username = '';
+    formattedEntry.password = '';
+    formattedEntry.notes = '';
+    formattedEntry.data = '';
+    formattedEntry.filePath = Array.from({ length: fileCount }, () => 'locked');
+    return formattedEntry;
+  }
+
   formattedEntry.filePath = (formattedEntry.filePath || []).map((filePath) => decrypt(filePath));
   return formattedEntry;
 };
 
 const createVaultEntry = async (req, res) => {
   try {
-    const { title, data, category, tags, url, username, password, notes } = req.body;
+    const { title, data, category, tags, url, username, password, notes, unlockAt } = req.body;
 
     let uploadedFiles = [];
     if (req.files && req.files.length > 0) {
@@ -32,6 +49,7 @@ const createVaultEntry = async (req, res) => {
       username,
       password,
       notes,
+      unlockAt: normalizeUnlockAt(unlockAt) ?? null,
       owner: req.user._id,
       filePath: uploadedFiles
     });
@@ -68,6 +86,10 @@ const getVaultEntryById = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Not authorized to view this entry' });
     }
 
+    if (await enforceVaultUnlock(req, res, vaultEntry, 'view vault entry details')) {
+      return;
+    }
+
     return res.status(200).json({
       success: true,
       data: formatVaultEntry(vaultEntry)
@@ -86,7 +108,7 @@ const getAllVaultEntries = async (req, res) => {
     res.status(200).json({
       success: true,
       count: vaults.length,
-      data: vaults.map(formatVaultEntry)
+      data: vaults.map((vaultEntry) => formatVaultEntry(vaultEntry, { redactLocked: true }))
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -117,6 +139,11 @@ const updateVaultEntry = async (req, res) => {
         vaultEntry[field] = req.body[field];
       }
     });
+
+    if (req.body.unlockAt !== undefined) {
+      vaultEntry.unlockAt = normalizeUnlockAt(req.body.unlockAt);
+    }
+
     vaultEntry.data = req.body.data || req.body.notes || vaultEntry.data || '';
     vaultEntry.filePath = uploadedFiles;
 
@@ -175,6 +202,10 @@ async function resolveOwnedAttachment(req, res) {
 
   if (vaultEntry.owner.toString() !== req.user._id.toString()) {
     res.status(401).json({ success: false, message: 'Not authorized to access this attachment' });
+    return null;
+  }
+
+  if (await enforceVaultUnlock(req, res, vaultEntry, 'access vault attachment')) {
     return null;
   }
 

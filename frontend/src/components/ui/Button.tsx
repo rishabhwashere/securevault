@@ -6,13 +6,13 @@ type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    'bg-gradient-to-br from-brand to-brand-deep text-white shadow-soft hover:-translate-y-px hover:shadow-card',
+    'border border-brand/25 bg-gradient-to-br from-brand to-accent text-background shadow-soft hover:-translate-y-px hover:shadow-card',
   secondary:
-    'border border-brand/20 bg-brand-light text-brand hover:bg-brand hover:text-white',
+    'border border-brand/25 bg-brand-light text-brand hover:bg-brand hover:text-background',
   ghost:
-    'border border-line bg-transparent text-textMuted hover:border-brand/40 hover:text-brand',
+    'border border-line bg-surface-soft text-textMuted hover:border-brand/35 hover:bg-surface-raised hover:text-textPrimary',
   danger:
-    'border border-danger/20 bg-danger/10 text-danger hover:bg-danger hover:text-white'
+    'border border-danger/25 bg-danger/10 text-danger hover:bg-danger hover:text-background'
 };
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

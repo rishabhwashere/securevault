@@ -1,10 +1,10 @@
 export const categoryPalette: Record<string, string> = {
-  Finance: 'bg-accent-light text-accent border-accent/20',
-  Personal: 'bg-brand-light text-brand border-brand/20',
-  Work: 'bg-[#efe9ff] text-[#6752b3] border-[#6752b3]/20',
-  Social: 'bg-[#eaf6f1] text-[#2d7c63] border-[#2d7c63]/20',
-  Shopping: 'bg-[#fff2ea] text-[#b66a39] border-[#b66a39]/20',
-  General: 'bg-white/70 text-textMuted border-line'
+  Finance: 'bg-[#1d1d1d] text-[#f0f0f0] border-white/10',
+  Personal: 'bg-[#181818] text-[#dddddd] border-white/10',
+  Work: 'bg-[#212121] text-[#cfcfcf] border-white/10',
+  Social: 'bg-[#161616] text-[#bababa] border-white/10',
+  Shopping: 'bg-[#252525] text-[#e2e2e2] border-white/10',
+  General: 'bg-surface-muted text-textMuted border-line'
 };
 
 export const defaultCategories = Object.keys(categoryPalette);

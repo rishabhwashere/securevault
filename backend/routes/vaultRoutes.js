@@ -21,6 +21,6 @@ router.get('/:id/attachments/:attachmentIndex/preview', protect, previewVaultAtt
 router.get('/:id/attachments/:attachmentIndex/download', protect, downloadVaultAttachment);
 router.post('/', protect, upload.array('files', 10), validateVaultInput, createVaultEntry);
 router.post('/:id/share-link', protect, createSharedLink);
-router.put('/:id', protect, upload.array('files', 10), updateVaultEntry);
+router.put('/:id', protect, upload.array('files', 10), validateVaultInput, updateVaultEntry);
 router.delete('/:id', protect, deleteVaultEntry);
 module.exports = router;

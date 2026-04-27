@@ -1,11 +1,21 @@
 import type { EntryPayload, VaultEntry } from './vault.types';
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
 async function request<T>(path: string, init: RequestInit = {}) {
   const response = await fetch(path, init);
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(payload.message || 'Request failed');
+    throw new ApiError(payload.message || 'Request failed', response.status);
   }
 
   return payload as T;
@@ -24,6 +34,7 @@ function buildFormData(payload: EntryPayload) {
   formData.append('password', payload.password ?? '');
   formData.append('notes', payload.notes ?? '');
   formData.append('data', payload.data ?? payload.notes ?? '');
+  formData.append('unlockAt', payload.unlockAt ? new Date(payload.unlockAt).toISOString() : '');
   (payload.tags ?? []).forEach((tag) => formData.append('tags', tag));
   (payload.files ?? []).forEach((file) => formData.append('files', file));
   return formData;

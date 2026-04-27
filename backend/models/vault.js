@@ -72,6 +72,10 @@ const vaultSchema = new mongoose.Schema(
       default: [],
       set: encryptArray
     },
+    unlockAt: {
+      type: Date,
+      default: null
+    },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
