@@ -3,11 +3,13 @@ import toast from 'react-hot-toast';
 import { useMemo } from 'react';
 import { useAuthStore } from '@/features/auth/auth.store';
 import {
+  approveEntryAccess,
   createShareLink,
   createVaultEntry,
   deleteVaultEntry,
   getVaultEntries,
   getVaultEntry,
+  requestEntryApproval,
   updateVaultEntry
 } from './vault.service';
 import { useVaultStore } from './vault.store';
@@ -25,14 +27,11 @@ export function useVaultEntries() {
 
 export function useVaultEntry(id?: string) {
   const token = useAuthStore((state) => state.token);
-  const entriesQuery = useVaultEntries();
-  const seeded = entriesQuery.data?.find((entry) => entry._id === id);
 
   return useQuery({
     queryKey: ['vault', 'entry', id],
     queryFn: () => getVaultEntry(token, id as string),
-    enabled: Boolean(token && id),
-    initialData: seeded
+    enabled: Boolean(token && id)
   });
 }
 
@@ -45,6 +44,10 @@ export function useCreateEntry() {
     onSuccess: () => {
       toast.success('Vault entry saved');
       queryClient.invalidateQueries({ queryKey: ['vault'] });
+    },
+    onError: (error) => {
+      const message = error instanceof Error ? error.message : 'Unable to save vault entry';
+      toast.error(message);
     }
   });
 }
@@ -60,6 +63,32 @@ export function useCreateShareLink(id: string) {
   });
 }
 
+export function useRequestEntryApproval(id: string) {
+  const token = useAuthStore((state) => state.token);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => requestEntryApproval(token, id),
+    onSuccess: (data) => {
+      toast.success(data.message || 'Approval request sent');
+      queryClient.invalidateQueries({ queryKey: ['vault'] });
+    }
+  });
+}
+
+export function useApproveEntryAccess(id: string) {
+  const token = useAuthStore((state) => state.token);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => approveEntryAccess(token, id),
+    onSuccess: (data) => {
+      toast.success(data.message || 'Access approved');
+      queryClient.invalidateQueries({ queryKey: ['vault'] });
+    }
+  });
+}
+
 export function useUpdateEntry(id: string) {
   const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
@@ -69,6 +98,10 @@ export function useUpdateEntry(id: string) {
     onSuccess: () => {
       toast.success('Vault entry updated');
       queryClient.invalidateQueries({ queryKey: ['vault'] });
+    },
+    onError: (error) => {
+      const message = error instanceof Error ? error.message : 'Unable to update vault entry';
+      toast.error(message);
     }
   });
 }
@@ -126,7 +159,7 @@ export function getVaultStats(entries: VaultEntry[] = []): VaultStats {
   return {
     totalEntries: entries.length,
     categories: new Set(entries.map((entry) => entry.category || 'General')).size,
-    filesAttached: entries.reduce((count, entry) => count + (entry.filePath?.length ?? 0), 0),
+    filesAttached: entries.reduce((count, entry) => count + (entry.attachmentCount ?? entry.filePath?.length ?? 0), 0),
     lastUpdated: entries
       .map((entry) => entry.updatedAt || entry.createdAt)
       .filter(Boolean)

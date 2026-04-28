@@ -1,12 +1,8 @@
 const validateVaultInput = (req, res, next) => {
-    const { title, data, notes, unlockAt } = req.body;
+    const { title, unlockAt, requiresDualApproval, secondApproverEmail } = req.body;
 
     if (!title || typeof title !== 'string') {
         return res.status(400).json({ success: false, message: 'Valid title is required' });
-    }
-
-    if ((!data || typeof data !== 'string') && (!notes || typeof notes !== 'string')) {
-        return res.status(400).json({ success: false, message: 'Valid notes or data are required' });
     }
 
     if (unlockAt !== undefined && unlockAt !== null && unlockAt !== '') {
@@ -15,6 +11,11 @@ const validateVaultInput = (req, res, next) => {
         if (Number.isNaN(parsedUnlockAt.getTime())) {
             return res.status(400).json({ success: false, message: 'unlockAt must be a valid date/time' });
         }
+    }
+
+    const dualApprovalEnabled = requiresDualApproval === true || requiresDualApproval === 'true';
+    if (dualApprovalEnabled && (!secondApproverEmail || typeof secondApproverEmail !== 'string')) {
+        return res.status(400).json({ success: false, message: 'Second approver email is required when dual approval is enabled' });
     }
 
     next();

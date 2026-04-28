@@ -29,11 +29,21 @@ export const entrySchema = z.object({
   password: z.string().optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
   tagsText: z.string().optional().or(z.literal('')),
+  requiresDualApproval: z.boolean().default(false),
+  secondApproverEmail: z.string().email('Enter a valid approver email').optional().or(z.literal('')),
   unlockAt: z
     .string()
     .optional()
     .or(z.literal(''))
     .refine((value) => !value || !Number.isNaN(new Date(value).getTime()), 'Choose a valid unlock date and time')
+}).superRefine((value, ctx) => {
+  if (value.requiresDualApproval && !value.secondApproverEmail) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['secondApproverEmail'],
+      message: 'Add the second approver email'
+    });
+  }
 });
 
 export type LoginValues = z.infer<typeof loginSchema>;

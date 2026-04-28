@@ -35,6 +35,8 @@ function buildFormData(payload: EntryPayload) {
   formData.append('notes', payload.notes ?? '');
   formData.append('data', payload.data ?? payload.notes ?? '');
   formData.append('unlockAt', payload.unlockAt ? new Date(payload.unlockAt).toISOString() : '');
+  formData.append('requiresDualApproval', payload.requiresDualApproval ? 'true' : 'false');
+  formData.append('secondApproverEmail', payload.secondApproverEmail ?? '');
   (payload.tags ?? []).forEach((tag) => formData.append('tags', tag));
   (payload.files ?? []).forEach((file) => formData.append('files', file));
   return formData;
@@ -87,5 +89,19 @@ export async function createShareLink(token: string, id: string, payload: { file
       'Content-Type': 'application/json'
     },
     body: JSON.stringify(payload)
+  });
+}
+
+export async function requestEntryApproval(token: string, id: string) {
+  return request<{ data: VaultEntry; message: string }>(`/api/vault/${id}/request-approval`, {
+    method: 'POST',
+    headers: authHeaders(token)
+  });
+}
+
+export async function approveEntryAccess(token: string, id: string) {
+  return request<{ data: VaultEntry; message: string }>(`/api/vault/${id}/approve-access`, {
+    method: 'POST',
+    headers: authHeaders(token)
   });
 }

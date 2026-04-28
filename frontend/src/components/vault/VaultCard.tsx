@@ -19,6 +19,8 @@ interface VaultCardProps {
 export function VaultCard({ entry, index, onView, onEdit, onDelete }: VaultCardProps) {
   const [revealed, setRevealed] = useState(false);
   const locked = isUnlockPending(entry.unlockAt);
+  const role = entry.accessPolicy?.role || 'owner';
+  const dualApproval = entry.accessPolicy?.requiresDualApproval;
   void index;
 
   useEffect(() => {
@@ -66,7 +68,7 @@ export function VaultCard({ entry, index, onView, onEdit, onDelete }: VaultCardP
                     </button>
                   )}
                 </MenuItem>
-                {!locked ? (
+                {!locked && role === 'owner' ? (
                   <MenuItem>
                     {({ focus }) => (
                       <button
@@ -83,7 +85,7 @@ export function VaultCard({ entry, index, onView, onEdit, onDelete }: VaultCardP
                     )}
                   </MenuItem>
                 ) : null}
-                {!locked ? (
+                {!locked && role === 'owner' ? (
                   <MenuItem>
                     {({ focus }) => (
                       <button
@@ -101,6 +103,7 @@ export function VaultCard({ entry, index, onView, onEdit, onDelete }: VaultCardP
                     )}
                   </MenuItem>
                 ) : null}
+                {role === 'owner' ? (
                 <MenuItem>
                   {({ focus }) => (
                     <button
@@ -116,6 +119,7 @@ export function VaultCard({ entry, index, onView, onEdit, onDelete }: VaultCardP
                     </button>
                   )}
                 </MenuItem>
+                ) : null}
               </MenuItems>
             </Menu>
           </div>
@@ -138,14 +142,20 @@ export function VaultCard({ entry, index, onView, onEdit, onDelete }: VaultCardP
                 Locked
               </Badge>
             ) : null}
+            {dualApproval ? (
+              <Badge variant="status" statusTone="active" className="gap-1.5">
+                <LockKeyhole className="h-3.5 w-3.5" />
+                Two-person
+              </Badge>
+            ) : null}
             <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-3 py-1.5">
               <FileText className="h-4 w-4 text-brand" />
-              {entry.filePath?.length ?? 0} files
+              {entry.attachmentCount ?? entry.filePath?.length ?? 0} files
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-3 py-1.5">
               {formatRelativeTime(entry.updatedAt || entry.createdAt)}
             </span>
-            {entry.password && !locked ? (
+            {entry.password && !locked && role === 'owner' ? (
               <div className="inline-flex items-center gap-2 rounded-full bg-surface-muted px-3 py-1.5 text-textPrimary">
                 <AnimatePresence mode="wait">
                   <motion.span

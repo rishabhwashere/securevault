@@ -39,12 +39,24 @@ export function AuthPanel() {
     loginForm.setValue('email', values.email);
   }
 
+  const registerPassword = registerForm.watch('password') ?? '';
+  const passwordToggle = (
+    <button
+      type="button"
+      aria-label={showPassword ? 'Hide password' : 'Show password'}
+      className="focus-ring rounded-full p-1 text-textMuted transition hover:text-brand"
+      onClick={() => setShowPassword((value) => !value)}
+    >
+      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+    </button>
+  );
+
   return (
-    <div className="glass-panel relative overflow-hidden rounded-xl p-7 shadow-card">
+    <div className="glass-panel relative mx-auto w-full max-w-[430px] overflow-hidden rounded-xl p-7 shadow-card">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand/45 to-transparent" />
       <div className="mb-8 text-center">
         <h2 className="mt-3 font-heading text-4xl leading-tight text-textPrimary">
-          {mode === 'register' ? 'Create your vault workspace' : 'Welcome back to the vault'}
+          {mode === 'register' ? 'Create your vault workspace' : 'Welcome back!'}
         </h2>
       </div>
 
@@ -71,16 +83,7 @@ export function AuthPanel() {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Your password"
                   error={loginForm.formState.errors.password?.message}
-                  rightAdornment={
-                    <button
-                      type="button"
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      className="focus-ring rounded-full p-1 text-textMuted transition hover:text-brand"
-                      onClick={() => setShowPassword((value) => !value)}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  }
+                  rightAdornment={passwordToggle}
                   {...loginForm.register('password')}
                 />
               </motion.div>
@@ -118,19 +121,10 @@ export function AuthPanel() {
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Minimum 8 characters"
                 error={registerForm.formState.errors.password?.message}
-                rightAdornment={
-                  <button
-                    type="button"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="focus-ring rounded-full p-1 text-textMuted transition hover:text-brand"
-                    onClick={() => setShowPassword((value) => !value)}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                }
+                rightAdornment={passwordToggle}
                 {...registerForm.register('password')}
               />
-              <PasswordStrengthMeter password={registerForm.watch('password') ?? ''} />
+              <PasswordStrengthMeter password={registerPassword} />
               <Input
                 label="Confirm password"
                 type={showPassword ? 'text' : 'password'}

@@ -10,33 +10,36 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: '#090909',
-        panel: 'rgba(16,16,16,0.92)',
-        surface: {
-          DEFAULT: '#151515',
-          raised: '#222222',
-          soft: 'rgba(27,27,27,0.92)',
-          muted: 'rgba(255,255,255,0.06)',
-          sunken: '#0f0f0f'
-        },
+        background: '#F0F6FF',
+        panel: 'rgba(246, 248, 255, 0.92)',
+        surface: '#F6F8FF',
+        'surface-soft': '#EEF3FB',
+        'surface-muted': '#E6EDF8',
+        'surface-raised': '#FFFFFF',
+        'surface-sunken': '#DCE6F3',
         brand: {
-          DEFAULT: '#f3f3f3',
-          deep: '#d2d2d2',
-          light: 'rgba(255,255,255,0.14)',
-          muted: 'rgba(255,255,255,0.1)'
+          DEFAULT: '#1F5FA6',
+          deep: '#0B3060',
+          light: '#C9DEFF',
+          muted: 'rgba(31, 95, 166, 0.12)'
         },
         accent: {
-          DEFAULT: '#a8a8a8',
-          light: 'rgba(255,255,255,0.1)',
-          muted: 'rgba(255,255,255,0.08)'
+          DEFAULT: '#5B9BD5',
+          light: '#DDE9FB',
+          muted: 'rgba(91, 155, 213, 0.14)'
+        },
+        steel: {
+          DEFAULT: '#607D8B',
+          light: '#B8C6D8',
+          muted: 'rgba(96, 125, 139, 0.16)'
         },
         danger: {
-          DEFAULT: '#d8d8d8',
-          light: 'rgba(255,255,255,0.1)'
+          DEFAULT: '#B34B54',
+          light: 'rgba(179, 75, 84, 0.10)'
         },
-        line: 'rgba(255,255,255,0.1)',
-        textPrimary: '#f4f4f4',
-        textMuted: '#8c8c8c'
+        line: 'rgba(96, 125, 139, 0.22)',
+        textPrimary: '#183B63',
+        textMuted: '#607D8B'
       },
       fontFamily: {
         sans: ['"Instrument Sans"', 'system-ui', 'sans-serif'],
@@ -49,9 +52,9 @@ module.exports = {
         sm: '10px'
       },
       boxShadow: {
-        card: '0 28px 80px rgba(0,0,0,0.38)',
-        soft: '0 18px 42px rgba(0,0,0,0.28)',
-        focus: '0 0 0 4px rgba(255,255,255,0.12)'
+        card: '0 18px 48px rgba(31, 95, 166, 0.12)',
+        soft: '0 10px 28px rgba(96, 125, 139, 0.12)',
+        focus: '0 0 0 4px rgba(91, 155, 213, 0.18)'
       },
       backdropBlur: {
         panel: '16px'

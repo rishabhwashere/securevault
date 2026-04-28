@@ -7,7 +7,7 @@ import { EntryForm } from '@/components/forms/EntryForm';
 import { Badge, Button, Card, Input, Modal } from '@/components/ui';
 import { useAuthStore } from '@/features/auth/auth.store';
 import { ApiError, authHeaders } from '@/features/vault/vault.service';
-import { useCreateShareLink, useVaultEntry, useUpdateEntry } from '@/features/vault/useVault';
+import { useApproveEntryAccess, useCreateShareLink, useRequestEntryApproval, useVaultEntry, useUpdateEntry } from '@/features/vault/useVault';
 import {
   copyToClipboard,
   downloadProtectedResource,
@@ -27,6 +27,8 @@ export function EntryDetailPage() {
   const entryQuery = useVaultEntry(id);
   const updateMutation = useUpdateEntry(id);
   const createShareLinkMutation = useCreateShareLink(id);
+  const requestApprovalMutation = useRequestEntryApproval(id);
+  const approveAccessMutation = useApproveEntryAccess(id);
   const [revealed, setRevealed] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(30);
   const [editing, setEditing] = useState(false);
@@ -39,6 +41,10 @@ export function EntryDetailPage() {
   const errorMessage = queryError instanceof Error ? queryError.message : '';
   const locked = isUnlockPending(entry?.unlockAt);
   const lockedError = queryError instanceof ApiError && queryError.status === 403;
+  const accessPolicy = entry?.accessPolicy;
+  const canSeeSensitive = Boolean(entry?.password || entry?.notes || entry?.data || entry?.url || entry?.username || entry?.filePath?.length);
+  const ownerView = accessPolicy?.role !== 'approver';
+  const attachmentCount = entry?.attachmentCount ?? entry?.filePath?.length ?? 0;
 
   useEffect(() => {
     if (!revealed) {
@@ -79,6 +85,27 @@ export function EntryDetailPage() {
               </h1>
               <p className="text-sm leading-6 text-textMuted">
                 {errorMessage || 'Please try again in a moment.'}
+              </p>
+            </div>
+          </div>
+        </Card>
+        <Button variant="ghost" onClick={() => navigate('/vault')}>
+          Back to vault
+        </Button>
+      </div>
+    );
+  }
+
+  if (lockedError) {
+    return (
+      <div className="space-y-6">
+        <Card className="rounded-xl border border-danger/20 bg-danger/5">
+          <div className="flex items-start gap-3">
+            <LockKeyhole className="mt-0.5 h-5 w-5 text-danger" />
+            <div className="space-y-2">
+              <h1 className="font-heading text-2xl text-textPrimary">Entry is locked</h1>
+              <p className="text-sm leading-6 text-textMuted">
+                {errorMessage || 'This entry cannot be opened until its scheduled unlock time.'}
               </p>
             </div>
           </div>
@@ -135,7 +162,7 @@ export function EntryDetailPage() {
               <MetaItem label="Created" value={formatDateTime(entry.createdAt)} />
               <MetaItem label="Updated" value={formatDateTime(entry.updatedAt)} />
               <MetaItem label="Unlocks" value={formatDateTime(entry.unlockAt)} />
-              <MetaItem label="Attachments" value={`${entry.filePath?.length ?? 0} files`} />
+              <MetaItem label="Attachments" value={`${attachmentCount} files`} />
               <MetaItem label="Tags" value={entry.tags?.join(', ') || 'None'} />
             </div>
           </Card>
@@ -159,6 +186,54 @@ export function EntryDetailPage() {
 
       <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
         <Card className="space-y-6 rounded-xl">
+          {accessPolicy?.requiresDualApproval ? (
+            <div className="rounded-xl border border-brand/20 bg-brand-light/30 p-4">
+              <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Two-person access</p>
+              <h2 className="mt-2 font-heading text-2xl text-textPrimary">
+                {accessPolicy.approvalStatus === 'approved' ? 'Approved access is active' : 'Second approval required'}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-textMuted">
+                {accessPolicy.role === 'approver'
+                  ? accessPolicy.approvalStatus === 'pending'
+                    ? 'The owner requested access. Approve it here to unlock this document for 10 minutes.'
+                    : 'You are the assigned approver for this document. Sensitive content stays hidden from your account.'
+                  : accessPolicy.approvalStatus === 'approved'
+                    ? `Sensitive content stays open until ${formatDateTime(accessPolicy.approvalExpiresAt)}.`
+                    : `A second user must approve this document before sensitive content and attachments are available.`}
+              </p>
+              {accessPolicy.secondApprover?.email ? (
+                <p className="mt-3 text-xs uppercase tracking-[0.18em] text-textMuted">
+                  Approver: {accessPolicy.secondApprover.email}
+                </p>
+              ) : null}
+              <div className="mt-4 flex flex-wrap gap-3">
+                {accessPolicy.canRequestApproval && accessPolicy.approvalStatus !== 'approved' ? (
+                  <Button
+                    type="button"
+                    loading={requestApprovalMutation.isPending}
+                    onClick={async () => {
+                      await requestApprovalMutation.mutateAsync();
+                      await entryQuery.refetch();
+                    }}
+                  >
+                    {accessPolicy.approvalStatus === 'pending' ? 'Resend request' : 'Request access approval'}
+                  </Button>
+                ) : null}
+                {accessPolicy.canApprove && accessPolicy.approvalStatus !== 'approved' ? (
+                  <Button
+                    type="button"
+                    loading={approveAccessMutation.isPending}
+                    onClick={async () => {
+                      await approveAccessMutation.mutateAsync();
+                      await entryQuery.refetch();
+                    }}
+                  >
+                    Approve access
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
           <DetailRow label="Website" value={entry.url} action={entry.url ? (
             <button
               type="button"
@@ -191,7 +266,7 @@ export function EntryDetailPage() {
             label="Password"
             value={entry.password ? maskValue(entry.password, revealed) : ''}
             action={
-              entry.password ? (
+              entry.password && ownerView ? (
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -230,7 +305,7 @@ export function EntryDetailPage() {
               <MetaItem label="Created" value={formatDateTime(entry.createdAt)} />
               <MetaItem label="Updated" value={formatDateTime(entry.updatedAt)} />
               <MetaItem label="Unlocks" value={formatDateTime(entry.unlockAt)} />
-              <MetaItem label="Attachments" value={`${entry.filePath?.length ?? 0} files`} />
+              <MetaItem label="Attachments" value={`${attachmentCount} files`} />
               <MetaItem label="Tags" value={entry.tags?.join(', ') || 'None'} />
             </div>
           </Card>
@@ -238,7 +313,7 @@ export function EntryDetailPage() {
           <Card className="rounded-xl">
             <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Attachments</p>
             <div className="mt-4 grid gap-3">
-              {entry.filePath?.length ? (
+              {canSeeSensitive && entry.filePath?.length ? (
                 entry.filePath.map((fileUrl, index) => (
                   <AttachmentCard
                     key={fileUrl}
@@ -255,6 +330,10 @@ export function EntryDetailPage() {
                     }}
                   />
                 ))
+              ) : attachmentCount ? (
+                <p className="text-sm text-textMuted">
+                  Attachments are protected until the second approver authorizes access.
+                </p>
               ) : (
                 <p className="text-sm text-textMuted">No files attached to this entry.</p>
               )}
@@ -263,6 +342,7 @@ export function EntryDetailPage() {
         </div>
       </div>
 
+      {ownerView ? (
       <button
         type="button"
         onClick={() => setEditing(true)}
@@ -271,7 +351,9 @@ export function EntryDetailPage() {
         <Pencil className="h-4 w-4" />
         Edit
       </button>
+      ) : null}
 
+      {ownerView ? (
       <EntryForm
         open={editing}
         mode="edit"
@@ -282,6 +364,7 @@ export function EntryDetailPage() {
           setEditing(false);
         }}
       />
+      ) : null}
 
       <Modal
         open={Boolean(shareTarget)}

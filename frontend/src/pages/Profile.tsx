@@ -3,32 +3,7 @@ import toast from 'react-hot-toast';
 import { Card, Button, Input } from '@/components/ui';
 import { useAuthStore } from '@/features/auth/auth.store';
 import { useUpdateProfile } from '@/features/user/useUser';
-
-async function uploadAvatar(token: string, file: File) {
-  const formData = new FormData();
-  formData.append('document', file);
-
-  const response = await fetch('/api/upload', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`
-    },
-    body: formData
-  });
-
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(payload.message || 'Upload failed');
-  }
-
-  const uploadedUrl = payload.fileUrl || payload.filePath || payload.secure_url || payload.url;
-
-  if (typeof uploadedUrl !== 'string' || !uploadedUrl.trim()) {
-    throw new Error('Upload completed but no avatar URL was returned');
-  }
-
-  return uploadedUrl;
-}
+import { uploadProfileAvatar } from '@/features/user/user.service';
 
 export function ProfilePage() {
   const token = useAuthStore((state) => state.token);
@@ -70,7 +45,7 @@ export function ProfilePage() {
     try {
       let nextAvatar = avatarUrl;
       if (file) {
-        nextAvatar = await uploadAvatar(token, file);
+        nextAvatar = await uploadProfileAvatar(token, file);
       }
 
       const response = await updateProfile.mutateAsync({

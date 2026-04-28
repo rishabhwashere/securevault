@@ -28,7 +28,7 @@ const vaultSchema = new mongoose.Schema(
     },
     data: {
       type: String,
-      required: true,
+      default: '',
       set: (value) => {
         if (value === undefined || value === null) return value;
         return encrypt(value); 
@@ -75,6 +75,39 @@ const vaultSchema = new mongoose.Schema(
     unlockAt: {
       type: Date,
       default: null
+    },
+    requiresDualApproval: {
+      type: Boolean,
+      default: false
+    },
+    secondApprover: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+    },
+    dualAccess: {
+      requestedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+      },
+      requestedAt: {
+        type: Date,
+        default: null
+      },
+      approvedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+      },
+      approvedAt: {
+        type: Date,
+        default: null
+      },
+      expiresAt: {
+        type: Date,
+        default: null
+      }
     },
     owner: {
       type: mongoose.Schema.Types.ObjectId,

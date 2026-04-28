@@ -5,7 +5,7 @@ import { Copy, Eye, EyeOff, Globe, Link2, Sparkles, X } from 'lucide-react';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { Button, Input, Textarea } from '@/components/ui';
+import { Button, Input, Textarea, Toggle } from '@/components/ui';
 import { defaultCategories } from '@/lib/constants';
 import { slideRight } from '@/lib/motion';
 import { copyToClipboard, normalizeUrl, parseTags, toDateTimeInputValue } from '@/lib/utils';
@@ -19,7 +19,7 @@ interface EntryFormProps {
   mode: 'create' | 'edit';
   entry?: VaultEntry;
   onClose: () => void;
-  onSubmit: (payload: {
+    onSubmit: (payload: {
     title: string;
     category: string;
     url?: string;
@@ -28,9 +28,11 @@ interface EntryFormProps {
     notes?: string;
     data?: string;
     tags?: string[];
-    files?: File[];
-    unlockAt?: string;
-  }) => Promise<void>;
+      files?: File[];
+      unlockAt?: string;
+      requiresDualApproval?: boolean;
+      secondApproverEmail?: string;
+    }) => Promise<void>;
 }
 
 export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormProps) {
@@ -47,6 +49,8 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
       password: '',
       notes: '',
       tagsText: '',
+      requiresDualApproval: false,
+      secondApproverEmail: '',
       unlockAt: ''
     }
   });
@@ -61,6 +65,8 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
         password: '',
         notes: '',
         tagsText: '',
+        requiresDualApproval: false,
+        secondApproverEmail: '',
         unlockAt: ''
       });
       setFiles([]);
@@ -75,6 +81,8 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
       password: entry.password || '',
       notes: entry.notes || entry.data || '',
       tagsText: entry.tags?.join(', ') || '',
+      requiresDualApproval: entry.requiresDualApproval || false,
+      secondApproverEmail: entry.secondApproverEmail || entry.accessPolicy?.secondApprover?.email || '',
       unlockAt: toDateTimeInputValue(entry.unlockAt)
     });
     setFiles([]);
@@ -96,10 +104,14 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
       data: values.notes || '',
       tags: parseTags(values.tagsText || ''),
       files,
-      unlockAt: values.unlockAt || ''
+      unlockAt: values.unlockAt || '',
+      requiresDualApproval: values.requiresDualApproval,
+      secondApproverEmail: values.secondApproverEmail || ''
     });
     onClose();
   }
+
+  const dualApprovalEnabled = form.watch('requiresDualApproval');
 
   return (
     <Transition appear show={open} as={Fragment}>
@@ -271,6 +283,24 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
                         error={form.formState.errors.unlockAt?.message}
                         {...form.register('unlockAt')}
                       />
+                    </section>
+
+                    <section className="space-y-4 border-t border-line pt-6">
+                      <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Dual approval</p>
+                      <Toggle
+                        label="Require a second user to approve access"
+                        checked={dualApprovalEnabled}
+                        onChange={(value) => form.setValue('requiresDualApproval', value, { shouldDirty: true, shouldValidate: true })}
+                      />
+                      {dualApprovalEnabled ? (
+                        <Input
+                          label="Second approver email"
+                          placeholder="teammate@company.com"
+                          error={form.formState.errors.secondApproverEmail?.message}
+                          hint="This user will receive an in-app approval request before the owner can open sensitive content."
+                          {...form.register('secondApproverEmail')}
+                        />
+                      ) : null}
                     </section>
 
                     <section className="space-y-4 border-t border-line pt-6">

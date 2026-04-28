@@ -1,18 +1,32 @@
 import type { AuthUser } from '@/features/auth/auth.store';
+import { requestJson } from '@/lib/request';
 
-async function request<T>(path: string, init: RequestInit) {
-  const response = await fetch(path, init);
-  const payload = await response.json().catch(() => ({}));
+export async function uploadProfileAvatar(token: string, file: File) {
+  const formData = new FormData();
+  formData.append('document', file);
 
-  if (!response.ok) {
-    throw new Error(payload.message || 'Request failed');
+  const payload = await requestJson<{ fileUrl?: string; filePath?: string; secure_url?: string; url?: string }>(
+    '/api/upload',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: formData
+    }
+  );
+
+  const uploadedUrl = payload.fileUrl || payload.filePath || payload.secure_url || payload.url;
+
+  if (typeof uploadedUrl !== 'string' || !uploadedUrl.trim()) {
+    throw new Error('Upload completed but no avatar URL was returned');
   }
 
-  return payload as T;
+  return uploadedUrl;
 }
 
 export function updateProfile(token: string, payload: { name?: string; avatarUrl?: string }) {
-  return request<{ data: AuthUser; message?: string }>('/api/users/me', {
+  return requestJson<{ data: AuthUser; message?: string }>('/api/users/me', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',

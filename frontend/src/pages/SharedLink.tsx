@@ -3,18 +3,8 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useParams } from 'react-router-dom';
 import { Button, Card, Input } from '@/components/ui';
+import { requestJson } from '@/lib/request';
 import { downloadProtectedResource, type AttachmentKind } from '@/lib/utils';
-
-async function request<T>(path: string, init: RequestInit = {}) {
-  const response = await fetch(path, init);
-  const payload = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(payload.message || 'Request failed');
-  }
-
-  return payload as T;
-}
 
 export function SharedLinkPage() {
   const { shareId = '' } = useParams();
@@ -28,7 +18,7 @@ export function SharedLinkPage() {
   useEffect(() => {
     let mounted = true;
 
-    request<{ data: { kind: AttachmentKind } }>(`/api/shared/${shareId}`)
+    requestJson<{ data: { kind: AttachmentKind } }>(`/api/shared/${shareId}`)
       .then((payload) => {
         if (!mounted) return;
         setKind(payload.data.kind);
@@ -60,9 +50,6 @@ export function SharedLinkPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      <div className="pointer-events-none absolute left-[-120px] top-[120px] h-[320px] w-[320px] rounded-full bg-brand/15 blur-3xl" />
-      <div className="pointer-events-none absolute right-[-80px] top-[240px] h-[300px] w-[300px] rounded-full bg-accent/15 blur-3xl" />
-
       <div className="mx-auto flex min-h-screen max-w-xl items-center px-4 py-10">
         <Card className="w-full rounded-xl">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-light text-brand">
@@ -91,7 +78,7 @@ export function SharedLinkPage() {
                 onClick={async () => {
                   try {
                     setLoading(true);
-                    const payload = await request<{ data: { accessToken: string; kind: AttachmentKind }; message: string }>(
+                    const payload = await requestJson<{ data: { accessToken: string; kind: AttachmentKind }; message: string }>(
                       `/api/shared/${shareId}/verify`,
                       {
                         method: 'POST',

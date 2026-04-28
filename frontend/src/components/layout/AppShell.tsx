@@ -5,9 +5,6 @@ import { TopBar } from './TopBar';
 export function AppShell() {
   return (
     <div className="relative min-h-screen overflow-hidden">
-      <div className="pointer-events-none absolute left-[-120px] top-[120px] h-[320px] w-[320px] rounded-full bg-brand/15 blur-3xl" />
-      <div className="pointer-events-none absolute right-[-80px] top-[240px] h-[300px] w-[300px] rounded-full bg-accent/15 blur-3xl" />
-
       <TopBar />
 
       <div className="mx-auto flex max-w-[1600px] pt-16">
