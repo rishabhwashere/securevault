@@ -1,17 +1,27 @@
 import type { EntryPayload, VaultEntry } from './vault.types';
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
 async function request<T>(path: string, init: RequestInit = {}) {
   const response = await fetch(path, init);
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(payload.message || 'Request failed');
+    throw new ApiError(payload.message || 'Request failed', response.status);
   }
 
   return payload as T;
 }
 
-function authHeaders(token: string) {
+export function authHeaders(token: string) {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -24,6 +34,9 @@ function buildFormData(payload: EntryPayload) {
   formData.append('password', payload.password ?? '');
   formData.append('notes', payload.notes ?? '');
   formData.append('data', payload.data ?? payload.notes ?? '');
+  formData.append('unlockAt', payload.unlockAt ? new Date(payload.unlockAt).toISOString() : '');
+  formData.append('requiresDualApproval', payload.requiresDualApproval ? 'true' : 'false');
+  formData.append('secondApproverEmail', payload.secondApproverEmail ?? '');
   (payload.tags ?? []).forEach((tag) => formData.append('tags', tag));
   (payload.files ?? []).forEach((file) => formData.append('files', file));
   return formData;
@@ -67,6 +80,7 @@ export async function deleteVaultEntry(token: string, id: string) {
     headers: authHeaders(token)
   });
 }
+<<<<<<< HEAD
 export async function generateShareLink(token: string, vaultId: string, password: string) {
   const response = await request(`/api/share/generate/${vaultId}`, {
     method: 'POST',
@@ -79,3 +93,30 @@ export async function generateShareLink(token: string, vaultId: string, password
   
   return response;
 }
+=======
+
+export async function createShareLink(token: string, id: string, payload: { filePath: string; password: string }) {
+  return request<{ data: { shareId: string; link: string }; message: string }>(`/api/vault/${id}/share-link`, {
+    method: 'POST',
+    headers: {
+      ...authHeaders(token),
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function requestEntryApproval(token: string, id: string) {
+  return request<{ data: VaultEntry; message: string }>(`/api/vault/${id}/request-approval`, {
+    method: 'POST',
+    headers: authHeaders(token)
+  });
+}
+
+export async function approveEntryAccess(token: string, id: string) {
+  return request<{ data: VaultEntry; message: string }>(`/api/vault/${id}/approve-access`, {
+    method: 'POST',
+    headers: authHeaders(token)
+  });
+}
+>>>>>>> 192bf6b657b077bb47b553775105521b58283ed9

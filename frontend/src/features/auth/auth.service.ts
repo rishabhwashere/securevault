@@ -1,5 +1,6 @@
 import type { LoginValues, RegisterValues } from '@/lib/validators';
 import type { AuthUser } from './auth.store';
+import { requestJson } from '@/lib/request';
 
 interface AuthResponse {
   token: string;
@@ -7,23 +8,10 @@ interface AuthResponse {
   message?: string;
 }
 
-async function request<T>(path: string, init: RequestInit) {
-  const response = await fetch(path, init);
-  const payload = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(payload.message || 'Request failed');
-  }
-
-  return payload as T;
-}
-
-export async function registerUser(values: RegisterValues) {
+export function registerUser(values: RegisterValues) {
   const { confirmPassword, ...body } = values;
   void confirmPassword;
-  
-  // 1. Wait for the backend to respond
-  const response = await request<any>('/api/auth/register', {
+  return requestJson<{ user: AuthUser; message: string }>('/api/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
@@ -38,9 +26,8 @@ export async function registerUser(values: RegisterValues) {
   return response;
 }
 
-export async function loginUser(values: LoginValues) {
-  // 1. Wait for the backend to respond
-  const response = await request<any>('/api/auth/login', {
+export function loginUser(values: LoginValues) {
+  return requestJson<AuthResponse>('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(values)

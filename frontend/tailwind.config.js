@@ -10,26 +10,36 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: '#f4efe8',
-        panel: 'rgba(255,250,245,0.88)',
+        background: '#F0F6FF',
+        panel: 'rgba(246, 248, 255, 0.92)',
+        surface: '#F6F8FF',
+        'surface-soft': '#EEF3FB',
+        'surface-muted': '#E6EDF8',
+        'surface-raised': '#FFFFFF',
+        'surface-sunken': '#DCE6F3',
         brand: {
-          DEFAULT: '#1f6b5f',
-          deep: '#184f46',
-          light: '#e8f4f1',
-          muted: 'rgba(31,107,95,0.12)'
+          DEFAULT: '#1F5FA6',
+          deep: '#0B3060',
+          light: '#C9DEFF',
+          muted: 'rgba(31, 95, 166, 0.12)'
         },
         accent: {
-          DEFAULT: '#c78646',
-          light: '#fdf3e6',
-          muted: 'rgba(199,134,70,0.12)'
+          DEFAULT: '#5B9BD5',
+          light: '#DDE9FB',
+          muted: 'rgba(91, 155, 213, 0.14)'
+        },
+        steel: {
+          DEFAULT: '#607D8B',
+          light: '#B8C6D8',
+          muted: 'rgba(96, 125, 139, 0.16)'
         },
         danger: {
-          DEFAULT: '#a93d32',
-          light: 'rgba(169,61,50,0.08)'
+          DEFAULT: '#B34B54',
+          light: 'rgba(179, 75, 84, 0.10)'
         },
-        line: 'rgba(85,62,42,0.12)',
-        textPrimary: '#1f1a17',
-        textMuted: '#65574d'
+        line: 'rgba(96, 125, 139, 0.22)',
+        textPrimary: '#183B63',
+        textMuted: '#607D8B'
       },
       fontFamily: {
         sans: ['"Instrument Sans"', 'system-ui', 'sans-serif'],
@@ -42,9 +52,9 @@ module.exports = {
         sm: '10px'
       },
       boxShadow: {
-        card: '0 24px 70px rgba(84,61,41,0.14)',
-        soft: '0 16px 34px rgba(57,40,25,0.10)',
-        focus: '0 0 0 4px rgba(31,107,95,0.12)'
+        card: '0 18px 48px rgba(31, 95, 166, 0.12)',
+        soft: '0 10px 28px rgba(96, 125, 139, 0.12)',
+        focus: '0 0 0 4px rgba(91, 155, 213, 0.18)'
       },
       backdropBlur: {
         panel: '16px'

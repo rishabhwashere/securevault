@@ -5,8 +5,8 @@ import { useAuthStore } from '@/features/auth/auth.store';
 import { AuthPage } from '@/pages/Auth';
 import { DashboardPage } from '@/pages/Dashboard';
 import { EntryDetailPage } from '@/pages/EntryDetail';
-import { SettingsPage } from '@/pages/Settings';
-import { SharedItemPage } from '@/pages/SharedItemPage'; 
+import { ProfilePage } from '@/pages/Profile';
+import { SharedLinkPage } from '@/pages/SharedLink';
 
 function AnimatedRouteOutlet() {
   const location = useLocation();
@@ -42,8 +42,8 @@ export const router = createBrowserRouter([
     element: <AuthPage />
   },
   {
-    path: '/shared/:token',
-    element: <SharedItemPage /> 
+    path: '/shared/:shareId',
+    element: <SharedLinkPage />
   },
   {
     element: <ProtectedLayout />,
@@ -64,8 +64,8 @@ export const router = createBrowserRouter([
             element: <EntryDetailPage />
           },
           {
-            path: '/vault/settings',
-            element: <SettingsPage />
+            path: '/vault/profile',
+            element: <ProfilePage />
           }
         ]
       }

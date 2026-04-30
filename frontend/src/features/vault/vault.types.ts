@@ -1,5 +1,21 @@
 export type VaultSort = 'newest' | 'oldest' | 'az' | 'za';
 
+export interface VaultAccessPolicy {
+  role: 'owner' | 'approver' | 'viewer';
+  requiresDualApproval: boolean;
+  secondApprover?: {
+    _id: string;
+    name: string;
+    email: string;
+  } | null;
+  approvalStatus: 'not_required' | 'awaiting_request' | 'pending' | 'approved' | 'expired';
+  requestedAt?: string | null;
+  approvedAt?: string | null;
+  approvalExpiresAt?: string | null;
+  canRequestApproval: boolean;
+  canApprove: boolean;
+}
+
 export interface VaultFile {
   name: string;
   url: string;
@@ -18,8 +34,13 @@ export interface VaultEntry {
   data?: string;
   tags?: string[];
   filePath?: string[];
+  attachmentCount?: number;
+  unlockAt?: string;
   createdAt?: string;
   updatedAt?: string;
+  requiresDualApproval?: boolean;
+  secondApproverEmail?: string;
+  accessPolicy?: VaultAccessPolicy;
 }
 
 export interface EntryPayload {
@@ -32,6 +53,9 @@ export interface EntryPayload {
   data?: string;
   tags?: string[];
   files?: File[];
+  unlockAt?: string;
+  requiresDualApproval?: boolean;
+  secondApproverEmail?: string;
 }
 
 export interface VaultStats {

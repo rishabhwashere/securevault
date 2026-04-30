@@ -29,7 +29,7 @@ export function StatsStrip({ stats }: StatsStripProps) {
                 <p className="text-xs uppercase tracking-[0.22em] text-textMuted">{item.label}</p>
                 <p className="mt-3 text-2xl font-semibold text-textPrimary">{item.value}</p>
               </div>
-              <span className="rounded-full bg-white/70 p-2 text-brand">
+              <span className="rounded-full bg-brand-light p-2 text-brand">
                 <Icon className="h-5 w-5" />
               </span>
             </div>

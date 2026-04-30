@@ -1,10 +1,10 @@
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Copy, Ellipsis, Eye, FileText, Pencil, Share2, Trash2 } from 'lucide-react';
+import { Copy, Ellipsis, Eye, FileText, LockKeyhole, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Badge } from '@/components/ui';
-import { copyToClipboard, formatRelativeTime, maskValue, truncate } from '@/lib/utils';
+import { copyToClipboard, formatDateTime, formatRelativeTime, isUnlockPending, maskValue, truncate } from '@/lib/utils';
 import { categoryPalette } from '@/lib/constants';
 import type { VaultEntry } from '@/features/vault/vault.types';
 
@@ -21,6 +21,9 @@ interface VaultCardProps {
 
 export function VaultCard({ entry, index, onView, onEdit, onDelete }: VaultCardProps) {
   const [revealed, setRevealed] = useState(false);
+  const locked = isUnlockPending(entry.unlockAt);
+  const role = entry.accessPolicy?.role || 'owner';
+  const dualApproval = entry.accessPolicy?.requiresDualApproval;
   void index;
 
   useEffect(() => {
@@ -76,7 +79,7 @@ export function VaultCard({ entry, index, onView, onEdit, onDelete }: VaultCardP
     <article
       role="article"
       aria-label={`${entry.title} entry`}
-      className="group glass-panel flex cursor-pointer flex-col gap-5 rounded-lg border border-line bg-panel/95 p-5 shadow-soft transition-all duration-200 hover:-translate-y-1 hover:border-brand/30 hover:shadow-card"
+      className="group glass-panel flex cursor-pointer flex-col gap-5 rounded-lg p-5 shadow-soft transition-all duration-200 hover:-translate-y-1 hover:border-brand/30 hover:shadow-card"
       onClick={() => onView(entry._id)}
     >
         <div className="flex flex-col gap-4">
@@ -85,7 +88,7 @@ export function VaultCard({ entry, index, onView, onEdit, onDelete }: VaultCardP
             <Menu as="div" className="relative">
               <MenuButton
                 onClick={(event) => event.stopPropagation()}
-                className="focus-ring rounded-full p-2 text-textMuted opacity-0 transition group-hover:opacity-100 hover:bg-white/70 hover:text-brand"
+                className="focus-ring rounded-full p-2 text-textMuted opacity-0 transition group-hover:opacity-100 hover:bg-surface-raised hover:text-brand"
                 aria-label="Entry actions"
               >
                 <Ellipsis className="h-4 w-4" />
@@ -102,60 +105,49 @@ export function VaultCard({ entry, index, onView, onEdit, onDelete }: VaultCardP
                         event.stopPropagation();
                         onView(entry._id);
                       }}
-                      className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm ${focus ? 'bg-white/70 text-brand' : 'text-textPrimary'}`}
+                      className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm ${focus ? 'bg-surface-raised text-brand' : 'text-textPrimary'}`}
                     >
                       <Eye className="h-4 w-4" />
-                      View
+                      {locked ? 'View status' : 'View'}
                     </button>
                   )}
                 </MenuItem>
-                <MenuItem>
-                  {({ focus }) => (
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onEdit(entry);
-                      }}
-                      className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm ${focus ? 'bg-white/70 text-brand' : 'text-textPrimary'}`}
-                    >
-                      <Pencil className="h-4 w-4" />
-                      Edit
-                    </button>
-                  )}
-                </MenuItem>
-                <MenuItem>
-                  {({ focus }) => (
-                    <button
-                      type="button"
-                      onClick={async (event) => {
-                        event.stopPropagation();
-                        const copied = await copyToClipboard(entry.password || '');
-                        if (copied) toast.success('Password copied');
-                      }}
-                      className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm ${focus ? 'bg-white/70 text-brand' : 'text-textPrimary'}`}
-                    >
-                      <Copy className="h-4 w-4" />
-                      Copy password
-                    </button>
-                  )}
-                </MenuItem>
-                
-                <MenuItem>
-                  {({ focus }) => (
-                    <button
-                      type="button"
-                      onClick={handleShare}
-                      className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm ${
-                        focus ? 'bg-white/70 text-brand' : 'text-textPrimary'
-                      }`}
-                    >
-                      <Share2 className="h-4 w-4" />
-                      Share Securely
-                    </button>
-                  )}
-                </MenuItem>
-
+                {!locked && role === 'owner' ? (
+                  <MenuItem>
+                    {({ focus }) => (
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onEdit(entry);
+                        }}
+                        className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm ${focus ? 'bg-surface-raised text-brand' : 'text-textPrimary'}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Edit
+                      </button>
+                    )}
+                  </MenuItem>
+                ) : null}
+                {!locked && role === 'owner' ? (
+                  <MenuItem>
+                    {({ focus }) => (
+                      <button
+                        type="button"
+                        onClick={async (event) => {
+                          event.stopPropagation();
+                          const copied = await copyToClipboard(entry.password || '');
+                          if (copied) toast.success('Password copied');
+                        }}
+                        className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm ${focus ? 'bg-surface-raised text-brand' : 'text-textPrimary'}`}
+                      >
+                        <Copy className="h-4 w-4" />
+                        Copy password
+                      </button>
+                    )}
+                  </MenuItem>
+                ) : null}
+                {role === 'owner' ? (
                 <MenuItem>
                   {({ focus }) => (
                     <button
@@ -171,6 +163,7 @@ export function VaultCard({ entry, index, onView, onEdit, onDelete }: VaultCardP
                     </button>
                   )}
                 </MenuItem>
+                ) : null}
               </MenuItems>
             </Menu>
           </div>
@@ -178,22 +171,36 @@ export function VaultCard({ entry, index, onView, onEdit, onDelete }: VaultCardP
           <div className="min-w-0 space-y-2">
             <h3 className="truncate font-heading text-xl font-semibold text-textPrimary">{entry.title}</h3>
             <p className="line-clamp-1 text-sm text-textMuted">
-              {entry.username || entry.url || truncate(entry.notes || entry.data || 'No subtitle yet', 52)}
+              {locked
+                ? `Locked until ${formatDateTime(entry.unlockAt)}`
+                : entry.username || entry.url || truncate(entry.notes || entry.data || 'No subtitle yet', 52)}
             </p>
           </div>
         </div>
 
         <div className="border-t border-line/80 pt-4">
           <div className="flex flex-wrap items-center gap-3 text-sm text-textMuted">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/60 px-3 py-1.5">
+            {locked ? (
+              <Badge variant="status" statusTone="archived" className="gap-1.5">
+                <LockKeyhole className="h-3.5 w-3.5" />
+                Locked
+              </Badge>
+            ) : null}
+            {dualApproval ? (
+              <Badge variant="status" statusTone="active" className="gap-1.5">
+                <LockKeyhole className="h-3.5 w-3.5" />
+                Two-person
+              </Badge>
+            ) : null}
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-3 py-1.5">
               <FileText className="h-4 w-4 text-brand" />
-              {entry.filePath?.length ?? 0} files
+              {entry.attachmentCount ?? entry.filePath?.length ?? 0} files
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/60 px-3 py-1.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-3 py-1.5">
               {formatRelativeTime(entry.updatedAt || entry.createdAt)}
             </span>
-            {entry.password ? (
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/60 px-3 py-1.5 text-textPrimary">
+            {entry.password && !locked && role === 'owner' ? (
+              <div className="inline-flex items-center gap-2 rounded-full bg-surface-muted px-3 py-1.5 text-textPrimary">
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={revealed ? 'revealed' : 'hidden'}

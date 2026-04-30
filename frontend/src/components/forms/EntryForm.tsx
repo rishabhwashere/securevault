@@ -5,10 +5,10 @@ import { Copy, Eye, EyeOff, Globe, Link2, Sparkles, X } from 'lucide-react';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { Button, Input, Textarea } from '@/components/ui';
+import { Button, Input, Textarea, Toggle } from '@/components/ui';
 import { defaultCategories } from '@/lib/constants';
 import { slideRight } from '@/lib/motion';
-import { copyToClipboard, normalizeUrl, parseTags } from '@/lib/utils';
+import { copyToClipboard, normalizeUrl, parseTags, toDateTimeInputValue } from '@/lib/utils';
 import { entrySchema, type EntryValues } from '@/lib/validators';
 import type { VaultEntry } from '@/features/vault/vault.types';
 import { FileUpload } from './FileUpload';
@@ -19,7 +19,7 @@ interface EntryFormProps {
   mode: 'create' | 'edit';
   entry?: VaultEntry;
   onClose: () => void;
-  onSubmit: (payload: {
+    onSubmit: (payload: {
     title: string;
     category: string;
     url?: string;
@@ -28,8 +28,11 @@ interface EntryFormProps {
     notes?: string;
     data?: string;
     tags?: string[];
-    files?: File[];
-  }) => Promise<void>;
+      files?: File[];
+      unlockAt?: string;
+      requiresDualApproval?: boolean;
+      secondApproverEmail?: string;
+    }) => Promise<void>;
 }
 
 export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormProps) {
@@ -45,7 +48,10 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
       username: '',
       password: '',
       notes: '',
-      tagsText: ''
+      tagsText: '',
+      requiresDualApproval: false,
+      secondApproverEmail: '',
+      unlockAt: ''
     }
   });
 
@@ -58,7 +64,10 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
         username: '',
         password: '',
         notes: '',
-        tagsText: ''
+        tagsText: '',
+        requiresDualApproval: false,
+        secondApproverEmail: '',
+        unlockAt: ''
       });
       setFiles([]);
       return;
@@ -71,7 +80,10 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
       username: entry.username || '',
       password: entry.password || '',
       notes: entry.notes || entry.data || '',
-      tagsText: entry.tags?.join(', ') || ''
+      tagsText: entry.tags?.join(', ') || '',
+      requiresDualApproval: entry.requiresDualApproval || false,
+      secondApproverEmail: entry.secondApproverEmail || entry.accessPolicy?.secondApprover?.email || '',
+      unlockAt: toDateTimeInputValue(entry.unlockAt)
     });
     setFiles([]);
   }, [entry, form, open]);
@@ -105,10 +117,15 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
       notes: values.notes || '',
       data: values.notes || '',
       tags: parseTags(values.tagsText || ''),
-      files
+      files,
+      unlockAt: values.unlockAt || '',
+      requiresDualApproval: values.requiresDualApproval,
+      secondApproverEmail: values.secondApproverEmail || ''
     });
     onClose();
   }
+
+  const dualApprovalEnabled = form.watch('requiresDualApproval');
 
   return (
     <Transition appear show={open} as={Fragment}>
@@ -122,7 +139,7 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-textPrimary/30 backdrop-blur-sm" />
+          <div className="fixed inset-0 bg-background/75 backdrop-blur-sm" />
         </TransitionChild>
 
         <div className="fixed inset-0 overflow-hidden">
@@ -145,7 +162,7 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
                   <button
                     type="button"
                     onClick={onClose}
-                    className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-white/70 hover:text-brand"
+                    className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-surface-raised hover:text-brand"
                     aria-label="Close panel"
                   >
                     <X className="h-5 w-5" />
@@ -166,7 +183,7 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
                         <span className="text-xs font-medium uppercase tracking-[0.22em]">Category</span>
                         <input
                           list="vault-categories"
-                          className="focus-ring rounded-md border border-line bg-white/60 px-3 py-2.5 text-sm text-textPrimary transition placeholder:text-textMuted/70 focus:border-brand focus:shadow-focus"
+                          className="focus-ring rounded-md border border-line bg-surface px-3 py-2.5 text-sm text-textPrimary transition placeholder:text-textMuted/70 focus:border-brand focus:shadow-focus"
                           placeholder="Choose or create a category"
                           {...form.register('category')}
                         />
@@ -273,6 +290,31 @@ export function EntryForm({ open, mode, entry, onClose, onSubmit }: EntryFormPro
                         leftAdornment={<Link2 className="h-4 w-4 text-textMuted" />}
                         {...form.register('tagsText')}
                       />
+                      <Input
+                        label="Unlock at"
+                        type="datetime-local"
+                        hint="Leave blank to make this entry available immediately."
+                        error={form.formState.errors.unlockAt?.message}
+                        {...form.register('unlockAt')}
+                      />
+                    </section>
+
+                    <section className="space-y-4 border-t border-line pt-6">
+                      <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Dual approval</p>
+                      <Toggle
+                        label="Require a second user to approve access"
+                        checked={dualApprovalEnabled}
+                        onChange={(value) => form.setValue('requiresDualApproval', value, { shouldDirty: true, shouldValidate: true })}
+                      />
+                      {dualApprovalEnabled ? (
+                        <Input
+                          label="Second approver email"
+                          placeholder="teammate@company.com"
+                          error={form.formState.errors.secondApproverEmail?.message}
+                          hint="This user will receive an in-app approval request before the owner can open sensitive content."
+                          {...form.register('secondApproverEmail')}
+                        />
+                      ) : null}
                     </section>
 
                     <section className="space-y-4 border-t border-line pt-6">
