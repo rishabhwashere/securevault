@@ -102,30 +102,34 @@ export function SharedItemPage() {
           {attachedImages.length > 0 && (
             <div className="mb-6 w-full flex flex-col gap-6 items-center bg-background rounded-lg border border-line p-4">
               <h3 className="font-medium text-textSecondary self-start">Attached Files:</h3>
-              
-              {attachedImages.map((url: string, index: number) => (
-                <div key={index} className="flex flex-col items-center gap-3 w-full bg-panel p-3 rounded-lg border border-line">
-                  <img 
-                    src={url} 
-                    alt={`Attachment ${index + 1}`} 
-                    className="max-h-96 w-auto rounded object-contain"
-                    onError={(e) => {
-                      // Hide broken image links rather than showing a cracked image icon
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                  
-                  <button 
-                    onClick={() => handleDownload(url)}
-                    className="flex items-center justify-center px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-md transition-colors text-sm font-medium border border-primary/20 w-full sm:w-auto"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Download File
-                  </button>
-                </div>
-              ))}
+              {attachedImages.map((url: string, index: number) => {
+                // Fix Windows backslashes and add a leading slash so it loads from the root
+                const formattedUrl = '/' + url.replace(/\\/g, '/').replace(/^\/+/, '');
+
+                return (
+                  <div key={index} className="flex flex-col items-center gap-3 w-full bg-panel p-3 rounded-lg border border-line">
+                    <img 
+                      src={formattedUrl} 
+                      alt={`Attachment ${index + 1}`} 
+                      className="max-h-96 w-auto rounded object-contain"
+                      onError={(e) => {
+                        // Hide broken image links rather than showing a cracked image icon
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                    
+                    <button 
+                      onClick={() => handleDownload(formattedUrl)}
+                      className="flex items-center justify-center px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-md transition-colors text-sm font-medium border border-primary/20 w-full sm:w-auto"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download File
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
 

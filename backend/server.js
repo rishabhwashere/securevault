@@ -18,7 +18,7 @@ const frontendDistDir = path.join(__dirname, '..', 'frontend', 'dist');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(frontendDistDir));
-
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 app.post('/api/test', (req, res) => {
   res.json({
     message: 'Test endpoint working',
