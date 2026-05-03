@@ -1,10 +1,12 @@
 require('dotenv').config();
-const uploadRoutes = require('./routes/uploadRoutes');
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const http = require('http');
 const connectDB = require('./config/db');
+const { initSocket } = require('./socket'); // Import the new helper
 
+const uploadRoutes = require('./routes/uploadRoutes');
 const authRoutes = require('./routes/authRoutes');
 const vaultRoutes = require('./routes/vaultRoutes');
 const userRoutes = require('./routes/UserRoutes');
@@ -12,13 +14,21 @@ const activityRoutes = require('./routes/activityRoutes');
 const sharedLinkRoutes = require('./routes/sharedLinkRoutes');
 
 const app = express();
+const server = http.createServer(app); 
+
+// Initialize Socket.IO using the helper
+const io = initSocket(server); 
+
 const PORT = process.env.PORT || 3000;
 const frontendDistDir = path.join(__dirname, '..', 'frontend', 'dist');
+const nomineeRoutes = require('./routes/nomineeRoutes');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(frontendDistDir));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+app.use('/api/nominee', nomineeRoutes);
+
 app.post('/api/test', (req, res) => {
   res.json({
     message: 'Test endpoint working',
@@ -38,12 +48,14 @@ app.get('/api', (req, res) => {
   });
 });
 
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/vault', vaultRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/shared', sharedLinkRoutes);
+app.use('/api/shared', require('./routes/sharedRoutes'));
 
 app.get('*', (req, res) => {
   if (!fs.existsSync(frontendDistDir)) {
@@ -59,10 +71,10 @@ async function startServer() {
   try {
     const dbConnection = await connectDB();
 
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
       console.log(`Connected database: ${dbConnection.name || 'MongoDB'}`);
-      console.log(`VaultX Home:   http://localhost:${PORT}/`);
+      console.log(`VaultX Home:    http://localhost:${PORT}/`);
       console.log(`Auth Register: http://localhost:${PORT}/api/auth/register`);
       console.log(`Auth Login:    http://localhost:${PORT}/api/auth/login`);
       console.log(`Users API:     http://localhost:${PORT}/api/users`);

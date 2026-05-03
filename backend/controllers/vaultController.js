@@ -188,7 +188,8 @@ const createVaultEntry = async (req, res) => {
       data: formatVaultEntry(populatedEntry, { userId: req.user._id })
     });
   } catch (error) {
-    console.error('UPLOAD ERROR:', error);
+    // THE FIX: Log crash
+    console.error("Vault Fetch Crash [createVaultEntry]:", error);
     res.status(error.statusCode || 500).json({ success: false, message: error.message });
   }
 };
@@ -219,6 +220,7 @@ const getVaultEntryById = async (req, res) => {
       })
     });
   } catch (error) {
+    console.error("Vault Fetch Crash [getVaultEntryById]:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -244,6 +246,8 @@ const getAllVaultEntries = async (req, res) => {
       )
     });
   } catch (error) {
+    // THE FIX: Log the crash that is causing the dashboard 500 error!
+    console.error("Vault Fetch Crash [getAllVaultEntries]:", error);
     res.status(error.statusCode || 500).json({ success: false, message: error.message });
   }
 };
@@ -322,6 +326,7 @@ const updateVaultEntry = async (req, res) => {
       data: formatVaultEntry(populatedEntry, { userId: req.user._id })
     });
   } catch (error) {
+    console.error("Vault Fetch Crash [updateVaultEntry]:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -349,6 +354,7 @@ const deleteVaultEntry = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Vault entry deleted successfully' });
   } catch (error) {
+    console.error("Vault Fetch Crash [deleteVaultEntry]:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -392,6 +398,7 @@ const requestVaultAccessApproval = async (req, res) => {
       data: formatVaultEntry(vaultEntry, { redactSensitive: true, userId: req.user._id })
     });
   } catch (error) {
+    console.error("Vault Fetch Crash [requestVaultAccessApproval]:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -439,6 +446,7 @@ const approveVaultAccessRequest = async (req, res) => {
       data: formatVaultEntry(vaultEntry, { redactSensitive: true, userId: req.user._id })
     });
   } catch (error) {
+    console.error("Vault Fetch Crash [approveVaultAccessRequest]:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -501,6 +509,7 @@ const previewVaultAttachment = async (req, res) => {
       return res.status(502).json({ success: false, message: 'Unable to fetch attachment preview' });
     }
   } catch (error) {
+    console.error("Vault Fetch Crash [previewVaultAttachment]:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -521,6 +530,7 @@ const downloadVaultAttachment = async (req, res) => {
       return res.status(502).json({ success: false, message: 'Unable to fetch attachment' });
     }
   } catch (error) {
+    console.error("Vault Fetch Crash [downloadVaultAttachment]:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

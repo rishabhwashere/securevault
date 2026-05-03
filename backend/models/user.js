@@ -38,9 +38,23 @@ const userSchema = new mongoose.Schema(
       default: true,
       index: true,
     },
+    
+    // ==========================================
+    // NEW NOMINEE FIELDS
+    // ==========================================
+    nominee: {
+      email: { type: String, default: null },
+      name: { type: String, default: null },
+      pin: { type: String, default: null }, // Simple PIN or password for the nominee
+    },
+    activeLoginRequest: {
+      isPending: { type: Boolean, default: false },
+      deviceInfo: { type: String, default: null },
+      timestamp: { type: Date, default: null }
+    }
   },
   {
-    timestamps: true,         
+    timestamps: true,        
     collection: 'users',
   }
 );
