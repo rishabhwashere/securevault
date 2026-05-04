@@ -36,12 +36,11 @@ export function useVaultEntry(id?: string) {
   });
 }
 
-// ✨ NEW: Fetch share links for a specific entry
 export function useVaultShareLinks(id?: string) {
   return useQuery({
     queryKey: ['vault', 'share-links', id],
     queryFn: () => getVaultShareLinks(id as string),
-    enabled: Boolean(id) // Only run if we actually have an ID
+    enabled: Boolean(id) 
   });
 }
 
@@ -68,7 +67,6 @@ export function useCreateShareLink(id: string) {
     mutationFn: (payload: { filePath: string; password: string }) => createShareLink(id, payload),
     onSuccess: (data: any) => {
       toast.success(data.message || 'Share link created');
-      // Invalidate the share-links query so the UI updates instantly when a new link is made!
       queryClient.invalidateQueries({ queryKey: ['vault', 'share-links', id] });
     }
   });

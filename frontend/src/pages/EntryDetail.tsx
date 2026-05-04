@@ -2,20 +2,19 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Copy, ExternalLink, FileText, Link as LinkIcon, User, Key, File } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useVaultEntry, useVaultShareLinks, useCreateShareLink } from '@/features/vault/useVault'; // ✨ Imported the create hook!
+import { useVaultEntry, useVaultShareLinks, useCreateShareLink } from '@/features/vault/useVault'; 
 
 export const EntryDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  // ✨ NEW: State to handle the inline share form
   const [isSharing, setIsSharing] = useState(false);
   const [sharePassword, setSharePassword] = useState('');
   const [selectedFile, setSelectedFile] = useState('');
 
   const { data: entry, isLoading, isError } = useVaultEntry(id);
   const { data: shareLinks = [] } = useVaultShareLinks(id);
-  const createLinkMutation = useCreateShareLink(id as string); // ✨ Initialize the mutation
+  const createLinkMutation = useCreateShareLink(id as string); 
 
   if (isLoading) {
     return (
@@ -50,7 +49,7 @@ export const EntryDetailPage = () => {
     return `${baseUrl}/${cleanPath.startsWith('/') ? cleanPath.slice(1) : cleanPath}`;
   };
 
-  // ✨ NEW: Handle the submit button for the new link
+  
   const handleCreateLink = async () => {
     if (!selectedFile) {
       toast.error('Please select an attachment to share');
@@ -66,14 +65,13 @@ export const EntryDetailPage = () => {
       password: sharePassword
     });
 
-    // Reset form after successful creation
     setIsSharing(false);
     setSharePassword('');
   };
 
   return (
     <div className="mx-auto max-w-4xl space-y-8 p-4 md:p-8">
-      {/* Header Section */}
+      {}
       <div className="flex items-center gap-4 border-b border-line pb-6">
         <button 
           onClick={() => navigate('/vault')} 
@@ -90,7 +88,7 @@ export const EntryDetailPage = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Credentials Section */}
+        {}
         {(entry.username || entry.password || entry.url) && (
           <div className="rounded-xl border border-line bg-panel p-6 shadow-soft md:col-span-2">
             <h3 className="mb-4 text-lg font-semibold text-textPrimary">Credentials</h3>
@@ -134,7 +132,7 @@ export const EntryDetailPage = () => {
           </div>
         )}
 
-        {/* Notes / Data Section */}
+        {}
         {(entry.notes || entry.data) && (
           <div className="rounded-xl border border-line bg-panel p-6 shadow-soft md:col-span-2">
             <h3 className="mb-4 text-lg font-semibold text-textPrimary">Secure Notes</h3>
@@ -146,7 +144,7 @@ export const EntryDetailPage = () => {
           </div>
         )}
 
-        {/* Attachments Section */}
+        {}
         {entry.filePath && entry.filePath.length > 0 && (
           <div className="rounded-xl border border-line bg-panel p-6 shadow-soft md:col-span-2">
             <h3 className="mb-4 text-lg font-semibold text-textPrimary">Attachments</h3>
@@ -172,7 +170,7 @@ export const EntryDetailPage = () => {
           </div>
         )}
 
-        {/* Active Share Links Section */}
+        {}
         <div className="rounded-xl border border-line bg-panel p-6 shadow-soft md:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-textPrimary">Active Share Links</h3>
@@ -191,7 +189,7 @@ export const EntryDetailPage = () => {
             </button>
           </div>
           
-          {/* ✨ NEW: Inline form to collect the password */}
+          {}
           {isSharing && (
             <div className="mb-6 rounded-lg border border-line bg-surface-soft p-4">
               <h4 className="mb-3 text-sm font-semibold text-textPrimary">Create Secure Link</h4>

@@ -12,8 +12,6 @@ export const useAuth = () => {
 
 export const useLogin = () => {
   const setSession = useAuthStore((state) => state.setSession);
-  
-  // We name this mutateAsync to match React Query syntax that AuthPanel expects
   const mutateAsync = async (credentials: any) => {
     try {
       const data = await authService.login(credentials);
@@ -26,19 +24,16 @@ export const useLogin = () => {
       throw error;
     }
   };
-
-  // We return both mutateAsync and login just to be safe
   return { mutateAsync, login: mutateAsync, isLoading: false };
 };
 
 export const useRegister = () => {
   const setSession = useAuthStore((state) => state.setSession);
 
-  // We name this mutateAsync to fix the exact error in your console
+  
   const mutateAsync = async (userData: any) => {
     try {
       const data = await authService.register(userData);
-      // Automatically log the user in if the API returns a token upon registration
       if (data && data.token) {
         setSession(data.token, data.user);
       }

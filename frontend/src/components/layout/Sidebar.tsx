@@ -9,7 +9,7 @@ interface SidebarProps {
 const navItems = [
   { to: '/vault', label: 'Vault', icon: LockKeyhole },
   { to: '/vault/new', label: 'New entry', icon: PlusCircle },
-  { to: '/nominee', label: 'Nominee', icon: UserPlus }, // ✨ Automatically renders via the map below
+  { to: '/nominee', label: 'Nominee', icon: UserPlus }, 
   { to: '/vault/profile', label: 'Profile', icon: UserCircle2 }
 ];
 

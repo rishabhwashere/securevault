@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
-import {requestJson as request} from '../../lib/request'; // Assuming this is your axios instance
+import {requestJson as request} from '../../lib/request'; 
 
 const NomineeAlertModal = ({ userId }) => {
   const [alertData, setAlertData] = useState<any>(null);
 
   useEffect(() => {
-    // Initialize socket
+    
     const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
     
     socket.emit('register_user', userId);
@@ -34,7 +34,7 @@ const NomineeAlertModal = ({ userId }) => {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
-        <h2 className="text-xl font-bold text-red-600 mb-4">🚨 Unrecognized Login Attempt</h2>
+        <h2 className="text-xl font-bold text-red-600 mb-4"> Unrecognized Login Attempt</h2>
         <p className="mb-4">
           Your designated nominee is trying to access your VaultX account.
         </p>

@@ -1,5 +1,5 @@
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
-import { LogOut, Search, UserCircle2, UserPlus } from 'lucide-react'; // ✨ Combined imports cleanly
+import { LogOut, Search, UserCircle2, UserPlus } from 'lucide-react'; 
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/features/auth/auth.store';
 import { useVaultStore } from '@/features/vault/vault.store';
@@ -33,7 +33,7 @@ export function TopBar() {
 
         <div className="ml-auto flex items-center gap-3">
           
-          {/* ✨ NEW: Nominee Button added right before the profile menu */}
+          {}
           <Link
             to="/nominee"
             className="focus-ring flex items-center gap-2 rounded-full border border-line bg-surface-soft px-4 py-1.5 text-sm font-medium text-textPrimary transition hover:border-brand/40 hover:bg-surface-raised hover:text-brand"
@@ -42,7 +42,7 @@ export function TopBar() {
             <span className="hidden sm:inline">Nominee</span>
           </Link>
 
-          {/* Existing Profile Menu */}
+          {}
           <Menu as="div" className="relative">
             <MenuButton className="focus-ring flex items-center gap-3 rounded-full border border-line bg-surface-soft py-1.5 pl-1.5 pr-3 transition hover:border-brand/40 hover:bg-surface-raised">
               <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-brand text-xs font-semibold text-background">

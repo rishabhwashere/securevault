@@ -103,7 +103,6 @@ export function SharedItemPage() {
             <div className="mb-6 w-full flex flex-col gap-6 items-center bg-background rounded-lg border border-line p-4">
               <h3 className="font-medium text-textSecondary self-start">Attached Files:</h3>
               {attachedImages.map((url: string, index: number) => {
-                // Fix Windows backslashes and add a leading slash so it loads from the root
                 const formattedUrl = '/' + url.replace(/\\/g, '/').replace(/^\/+/, '');
 
                 return (
@@ -113,7 +112,6 @@ export function SharedItemPage() {
                       alt={`Attachment ${index + 1}`} 
                       className="max-h-96 w-auto rounded object-contain"
                       onError={(e) => {
-                        // Hide broken image links rather than showing a cracked image icon
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
                     />

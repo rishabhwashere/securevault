@@ -7,13 +7,10 @@ export function NomineePage() {
   const [hasNominee, setHasNominee] = useState(false);
   const [nomineeName, setNomineeName] = useState('');
   const [nomineeEmail, setNomineeEmail] = useState('');
-  const [nomineePin, setNomineePin] = useState(''); // ✨ Added PIN state
-  
-  // Get the logged-in user's token
+  const [nomineePin, setNomineePin] = useState(''); 
   const token = useAuthStore((state) => state.token);
   const API_URL = 'http://localhost:5000/api/nominee'; 
 
-  // 1. Fetch the nominee when the page loads
   useEffect(() => {
     const fetchNominee = async () => {
       try {
@@ -35,10 +32,9 @@ export function NomineePage() {
     if (token) fetchNominee();
   }, [token]);
 
-  // 2. Save the nominee to the database
   const handleSaveNominee = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nomineeName || !nomineeEmail || !nomineePin) return; // Ensure PIN is required
+    if (!nomineeName || !nomineeEmail || !nomineePin) return; 
 
     try {
       const response = await fetch(API_URL, {
@@ -47,7 +43,7 @@ export function NomineePage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ name: nomineeName, email: nomineeEmail, pin: nomineePin }) // ✨ Added PIN to payload
+        body: JSON.stringify({ name: nomineeName, email: nomineeEmail, pin: nomineePin }) 
       });
       const json = await response.json();
 
@@ -59,7 +55,6 @@ export function NomineePage() {
     }
   };
 
-  // 3. Delete the nominee from the database
   const handleRevokeAccess = async () => {
     try {
       const response = await fetch(API_URL, {
@@ -72,7 +67,7 @@ export function NomineePage() {
         setHasNominee(false);
         setNomineeName('');
         setNomineeEmail('');
-        setNomineePin(''); // ✨ Clear the PIN on revoke
+        setNomineePin(''); 
       }
     } catch (error) {
       console.error("Failed to revoke nominee:", error);
@@ -169,7 +164,7 @@ export function NomineePage() {
                 />
               </div>
 
-              {/* ✨ NEW PIN FIELD HERE */}
+              {}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Secret PIN</label>
                 <input 
