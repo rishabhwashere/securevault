@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { AuthPanel } from '@/components/auth/AuthPanel';
 import { VaultXLogo } from '@/components/auth/VaultXLogo';
 import { useAuthStore } from '@/features/auth/auth.store';
@@ -24,9 +24,21 @@ export function AuthPage() {
           <div className="pointer-events-none absolute inset-x-12 -top-8 -z-10 h-24 rounded-full bg-gradient-to-r from-accent/0 via-accent/25 to-brand/0 blur-2xl motion-safe:animate-pulseSoft" />
           <div className="pointer-events-none absolute inset-y-10 -left-8 -z-10 w-24 rounded-full bg-gradient-to-b from-brand/10 via-accent/20 to-transparent blur-3xl motion-safe:animate-float" />
           <div className="pointer-events-none absolute inset-y-12 -right-10 -z-10 w-28 rounded-full bg-gradient-to-b from-steel/10 via-accent/16 to-transparent blur-3xl motion-safe:animate-float" />
+          
           <div className="relative z-10 flex flex-col items-center gap-5">
             <VaultXLogo />
             <AuthPanel />
+            
+            {/* Nominee Login Link Added Here */}
+            <div className="mt-2 text-center">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Are you a designated emergency contact?{' '}
+                <Link to="/nominee-login" className="text-blue-600 hover:text-blue-500 hover:underline font-medium">
+                  Log in as Nominee
+                </Link>
+              </p>
+            </div>
+
           </div>
         </section>
       </div>

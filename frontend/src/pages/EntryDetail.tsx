@@ -1,728 +1,266 @@
-<<<<<<< HEAD
-import { Copy, Download, ExternalLink, Eye, EyeOff, FileImage, FileText, Pencil } from 'lucide-react';
-=======
-import { AlertTriangle, Copy, Download, ExternalLink, Eye, EyeOff, FileImage, FileText, LockKeyhole, Pencil, Share2 } from 'lucide-react';
->>>>>>> 192bf6b657b077bb47b553775105521b58283ed9
-import { useEffect, useState } from 'react';
-import type { ReactNode } from 'react';
+import React, { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Copy, ExternalLink, FileText, Link as LinkIcon, User, Key, File } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useNavigate, useParams } from 'react-router-dom';
-import { EntryForm } from '@/components/forms/EntryForm';
-import { Badge, Button, Card, Input, Modal } from '@/components/ui';
-import { useAuthStore } from '@/features/auth/auth.store';
-import { ApiError, authHeaders } from '@/features/vault/vault.service';
-import { useApproveEntryAccess, useCreateShareLink, useRequestEntryApproval, useVaultEntry, useUpdateEntry } from '@/features/vault/useVault';
-import {
-  copyToClipboard,
-  downloadProtectedResource,
-  formatDateTime,
-  fetchProtectedResourceBlobUrl,
-  getAttachmentKind,
-  getAttachmentKindFromContentType,
-  isUnlockPending,
-  maskValue,
-  normalizeUrl,
-  type AttachmentKind
-} from '@/lib/utils';
+import { useVaultEntry, useVaultShareLinks, useCreateShareLink } from '@/features/vault/useVault'; // ✨ Imported the create hook!
 
-export function EntryDetailPage() {
+export const EntryDetailPage = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { id = '' } = useParams();
-  const entryQuery = useVaultEntry(id);
-  const updateMutation = useUpdateEntry(id);
-  const createShareLinkMutation = useCreateShareLink(id);
-  const requestApprovalMutation = useRequestEntryApproval(id);
-  const approveAccessMutation = useApproveEntryAccess(id);
-  const [revealed, setRevealed] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(30);
-  const [editing, setEditing] = useState(false);
-  const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
-  const [shareTarget, setShareTarget] = useState<{ filePath: string; label: string } | null>(null);
+  
+  // ✨ NEW: State to handle the inline share form
+  const [isSharing, setIsSharing] = useState(false);
   const [sharePassword, setSharePassword] = useState('');
-  const [generatedLink, setGeneratedLink] = useState('');
-  const entry = entryQuery.data;
-  const queryError = entryQuery.error;
-  const errorMessage = queryError instanceof Error ? queryError.message : '';
-  const locked = isUnlockPending(entry?.unlockAt);
-  const lockedError = queryError instanceof ApiError && queryError.status === 403;
-  const accessPolicy = entry?.accessPolicy;
-  const canSeeSensitive = Boolean(entry?.password || entry?.notes || entry?.data || entry?.url || entry?.username || entry?.filePath?.length);
-  const ownerView = accessPolicy?.role !== 'approver';
-  const attachmentCount = entry?.attachmentCount ?? entry?.filePath?.length ?? 0;
+  const [selectedFile, setSelectedFile] = useState('');
 
-  useEffect(() => {
-    if (!revealed) {
-      setSecondsLeft(30);
+  const { data: entry, isLoading, isError } = useVaultEntry(id);
+  const { data: shareLinks = [] } = useVaultShareLinks(id);
+  const createLinkMutation = useCreateShareLink(id as string); // ✨ Initialize the mutation
+
+  if (isLoading) {
+    return (
+      <div className="flex h-64 items-center justify-center p-8 text-textMuted animate-pulse">
+        Decrypting entry details...
+      </div>
+    );
+  }
+
+  if (isError || !entry) {
+    return (
+      <div className="flex flex-col items-center justify-center space-y-4 p-8 text-red-400">
+        <p>Entry not found or access denied.</p>
+        <button onClick={() => navigate('/vault')} className="text-brand hover:underline">
+          Return to Dashboard
+        </button>
+      </div>
+    );
+  }
+
+  const copyToClipboard = (text: string, label: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copied to clipboard`);
+  };
+
+  const getFileUrl = (path: string) => {
+    if (!path) return '#';
+    if (path.startsWith('http')) return path; 
+    const cleanPath = path.replace(/\\/g, '/');
+    const baseUrl = 'http://localhost:5000'; 
+    return `${baseUrl}/${cleanPath.startsWith('/') ? cleanPath.slice(1) : cleanPath}`;
+  };
+
+  // ✨ NEW: Handle the submit button for the new link
+  const handleCreateLink = async () => {
+    if (!selectedFile) {
+      toast.error('Please select an attachment to share');
+      return;
+    }
+    if (sharePassword.length < 4) {
+      toast.error('Password must be at least 4 characters');
       return;
     }
 
-    const timer = window.setInterval(() => {
-      setSecondsLeft((value) => {
-        if (value <= 1) {
-          setRevealed(false);
-          return 30;
-        }
-        return value - 1;
-      });
-    }, 1000);
+    await createLinkMutation.mutateAsync({
+      filePath: selectedFile,
+      password: sharePassword
+    });
 
-    return () => window.clearInterval(timer);
-  }, [revealed]);
-
-  if (entryQuery.isLoading && !entry) {
-    return (
-      <Card className="rounded-xl">
-        <p className="text-sm text-textMuted">Loading entry details...</p>
-      </Card>
-    );
-  }
-
-  if (!entry && queryError) {
-    return (
-      <div className="space-y-6">
-        <Card className="rounded-xl border border-danger/20 bg-danger/5">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="mt-0.5 h-5 w-5 text-danger" />
-            <div className="space-y-2">
-              <h1 className="font-heading text-2xl text-textPrimary">
-                {lockedError ? 'Entry is locked' : 'Unable to load this entry'}
-              </h1>
-              <p className="text-sm leading-6 text-textMuted">
-                {errorMessage || 'Please try again in a moment.'}
-              </p>
-            </div>
-          </div>
-        </Card>
-        <Button variant="ghost" onClick={() => navigate('/vault')}>
-          Back to vault
-        </Button>
-      </div>
-    );
-  }
-
-  if (lockedError) {
-    return (
-      <div className="space-y-6">
-        <Card className="rounded-xl border border-danger/20 bg-danger/5">
-          <div className="flex items-start gap-3">
-            <LockKeyhole className="mt-0.5 h-5 w-5 text-danger" />
-            <div className="space-y-2">
-              <h1 className="font-heading text-2xl text-textPrimary">Entry is locked</h1>
-              <p className="text-sm leading-6 text-textMuted">
-                {errorMessage || 'This entry cannot be opened until its scheduled unlock time.'}
-              </p>
-            </div>
-          </div>
-        </Card>
-        <Button variant="ghost" onClick={() => navigate('/vault')}>
-          Back to vault
-        </Button>
-      </div>
-    );
-  }
-
-  if (!entry) {
-    return null;
-  }
-
-  if (locked) {
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <Badge>{entry.category || 'General'}</Badge>
-            <h1 className="mt-4 font-heading text-4xl text-textPrimary">{entry.title}</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-textMuted">
-              This entry is time-locked. Sensitive content and attachments will unlock automatically when the scheduled time arrives.
-            </p>
-          </div>
-          <Button variant="ghost" onClick={() => navigate('/vault')}>
-            Back to vault
-          </Button>
-        </div>
-
-        <Card className="rounded-xl border border-brand/20 bg-brand-light/40">
-          <div className="flex items-start gap-3">
-            <LockKeyhole className="mt-0.5 h-5 w-5 text-brand" />
-            <div className="space-y-2">
-              <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Scheduled unlock</p>
-              <h2 className="font-heading text-2xl text-textPrimary">{formatDateTime(entry.unlockAt)}</h2>
-              <p className="text-sm text-textMuted">
-                {lockedError ? errorMessage : `Document is locked until ${formatDateTime(entry.unlockAt)}`}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
-          <Card className="space-y-5 rounded-xl">
-            <DetailRow label="Status" value="Locked" />
-            <DetailRow label="Content" value="Sensitive fields are hidden until the unlock time passes." multiline />
-          </Card>
-
-          <Card className="rounded-xl">
-            <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Metadata</p>
-            <div className="mt-4 grid gap-4">
-              <MetaItem label="Created" value={formatDateTime(entry.createdAt)} />
-              <MetaItem label="Updated" value={formatDateTime(entry.updatedAt)} />
-              <MetaItem label="Unlocks" value={formatDateTime(entry.unlockAt)} />
-              <MetaItem label="Attachments" value={`${attachmentCount} files`} />
-              <MetaItem label="Tags" value={entry.tags?.join(', ') || 'None'} />
-            </div>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+    // Reset form after successful creation
+    setIsSharing(false);
+    setSharePassword('');
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+    <div className="mx-auto max-w-4xl space-y-8 p-4 md:p-8">
+      {/* Header Section */}
+      <div className="flex items-center gap-4 border-b border-line pb-6">
+        <button 
+          onClick={() => navigate('/vault')} 
+          className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-surface-raised transition-colors"
+        >
+          <ArrowLeft className="h-5 w-5 text-textMuted" />
+        </button>
         <div>
-          <Badge>{entry.category || 'General'}</Badge>
-          <h1 className="mt-4 font-heading text-4xl text-textPrimary">{entry.title}</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-textMuted">{entry.notes || entry.data || 'No notes saved yet.'}</p>
+          <h1 className="text-2xl font-bold text-textPrimary md:text-3xl">{entry.title}</h1>
+          <span className="mt-2 inline-block rounded-full bg-brand/10 px-3 py-1 text-xs font-medium text-brand">
+            {entry.category || 'General'}
+          </span>
         </div>
-        <Button variant="ghost" onClick={() => navigate('/vault')}>
-          Back to vault
-        </Button>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
-        <Card className="space-y-6 rounded-xl">
-          {accessPolicy?.requiresDualApproval ? (
-            <div className="rounded-xl border border-brand/20 bg-brand-light/30 p-4">
-              <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Two-person access</p>
-              <h2 className="mt-2 font-heading text-2xl text-textPrimary">
-                {accessPolicy.approvalStatus === 'approved' ? 'Approved access is active' : 'Second approval required'}
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-textMuted">
-                {accessPolicy.role === 'approver'
-                  ? accessPolicy.approvalStatus === 'pending'
-                    ? 'The owner requested access. Approve it here to unlock this document for 10 minutes.'
-                    : 'You are the assigned approver for this document. Sensitive content stays hidden from your account.'
-                  : accessPolicy.approvalStatus === 'approved'
-                    ? `Sensitive content stays open until ${formatDateTime(accessPolicy.approvalExpiresAt)}.`
-                    : `A second user must approve this document before sensitive content and attachments are available.`}
-              </p>
-              {accessPolicy.secondApprover?.email ? (
-                <p className="mt-3 text-xs uppercase tracking-[0.18em] text-textMuted">
-                  Approver: {accessPolicy.secondApprover.email}
-                </p>
-              ) : null}
-              <div className="mt-4 flex flex-wrap gap-3">
-                {accessPolicy.canRequestApproval && accessPolicy.approvalStatus !== 'approved' ? (
-                  <Button
-                    type="button"
-                    loading={requestApprovalMutation.isPending}
-                    onClick={async () => {
-                      await requestApprovalMutation.mutateAsync();
-                      await entryQuery.refetch();
-                    }}
-                  >
-                    {accessPolicy.approvalStatus === 'pending' ? 'Resend request' : 'Request access approval'}
-                  </Button>
-                ) : null}
-                {accessPolicy.canApprove && accessPolicy.approvalStatus !== 'approved' ? (
-                  <Button
-                    type="button"
-                    loading={approveAccessMutation.isPending}
-                    onClick={async () => {
-                      await approveAccessMutation.mutateAsync();
-                      await entryQuery.refetch();
-                    }}
-                  >
-                    Approve access
-                  </Button>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-          <DetailRow label="Website" value={entry.url} action={entry.url ? (
-            <button
-              type="button"
-              onClick={() => window.open(normalizeUrl(entry.url || ''), '_blank', 'noopener,noreferrer')}
-              className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-surface-raised hover:text-brand"
-              aria-label="Open website"
-            >
-              <ExternalLink className="h-4 w-4" />
-            </button>
-          ) : undefined} />
-          <DetailRow
-            label="Username"
-            value={entry.username}
-            action={
-              entry.username ? (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (await copyToClipboard(entry.username || '')) toast.success('Username copied');
-                  }}
-                  className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-surface-raised hover:text-brand"
-                  aria-label="Copy username"
-                >
-                  <Copy className="h-4 w-4" />
-                </button>
-              ) : undefined
-            }
-          />
-          <DetailRow
-            label="Password"
-            value={entry.password ? maskValue(entry.password, revealed) : ''}
-            action={
-              entry.password && ownerView ? (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setRevealed((value) => !value)}
-                    className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-surface-raised hover:text-brand"
-                    aria-label={revealed ? 'Hide password' : 'Reveal password'}
-                  >
-                    {revealed ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (await copyToClipboard(entry.password || '')) toast.success('Password copied');
-                    }}
-                    className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-surface-raised hover:text-brand"
-                    aria-label="Copy password"
-                  >
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Credentials Section */}
+        {(entry.username || entry.password || entry.url) && (
+          <div className="rounded-xl border border-line bg-panel p-6 shadow-soft md:col-span-2">
+            <h3 className="mb-4 text-lg font-semibold text-textPrimary">Credentials</h3>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {entry.username && (
+                <div className="flex items-center justify-between rounded-lg border border-line bg-surface-soft p-3">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <User className="h-4 w-4 text-textMuted shrink-0" />
+                    <span className="truncate text-sm text-textPrimary">{entry.username}</span>
+                  </div>
+                  <button onClick={() => copyToClipboard(entry.username, 'Username')} className="text-textMuted hover:text-brand p-1">
                     <Copy className="h-4 w-4" />
                   </button>
-                  {revealed ? (
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-brand/20 text-xs font-medium text-brand">
-                      {secondsLeft}
-                    </span>
-                  ) : null}
                 </div>
-              ) : undefined
-            }
-          />
-          <DetailRow label="Notes" value={entry.notes || entry.data} multiline />
-        </Card>
-
-        <div className="space-y-6">
-          <Card className="rounded-xl">
-            <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Metadata</p>
-            <div className="mt-4 grid gap-4">
-              <MetaItem label="Created" value={formatDateTime(entry.createdAt)} />
-              <MetaItem label="Updated" value={formatDateTime(entry.updatedAt)} />
-              <MetaItem label="Unlocks" value={formatDateTime(entry.unlockAt)} />
-              <MetaItem label="Attachments" value={`${attachmentCount} files`} />
-              <MetaItem label="Tags" value={entry.tags?.join(', ') || 'None'} />
-            </div>
-          </Card>
-
-          <Card className="rounded-xl">
-            <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Attachments</p>
-            <div className="mt-4 grid gap-3">
-              {canSeeSensitive && entry.filePath?.length ? (
-                entry.filePath.map((fileUrl, index) => (
-                  <AttachmentCard
-                    key={fileUrl}
-                    entryId={entry._id}
-                    fileUrl={fileUrl}
-                    index={index}
-                    downloading={downloadingIndex === index}
-                    onDownloadStateChange={(active) => setDownloadingIndex(active ? index : null)}
-                    onShare={() => {
-                      const label = `Attachment ${index + 1}`;
-                      setShareTarget({ filePath: fileUrl, label });
-                      setSharePassword('');
-                      setGeneratedLink('');
-                    }}
-                  />
-                ))
-              ) : attachmentCount ? (
-                <p className="text-sm text-textMuted">
-                  Attachments are protected until the second approver authorizes access.
-                </p>
-              ) : (
-                <p className="text-sm text-textMuted">No files attached to this entry.</p>
+              )}
+              {entry.password && (
+                <div className="flex items-center justify-between rounded-lg border border-line bg-surface-soft p-3">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <Key className="h-4 w-4 text-textMuted shrink-0" />
+                    <span className="truncate text-sm text-textPrimary">••••••••</span>
+                  </div>
+                  <button onClick={() => copyToClipboard(entry.password, 'Password')} className="text-textMuted hover:text-brand p-1">
+                    <Copy className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+              {entry.url && (
+                <div className="flex items-center justify-between rounded-lg border border-line bg-surface-soft p-3">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <LinkIcon className="h-4 w-4 text-textMuted shrink-0" />
+                    <a href={entry.url} target="_blank" rel="noreferrer" className="truncate text-sm text-brand hover:underline">
+                      {entry.url}
+                    </a>
+                  </div>
+                  <button onClick={() => copyToClipboard(entry.url, 'URL')} className="text-textMuted hover:text-brand p-1">
+                    <Copy className="h-4 w-4" />
+                  </button>
+                </div>
               )}
             </div>
-          </Card>
-        </div>
-      </div>
-
-      {ownerView ? (
-      <button
-        type="button"
-        onClick={() => setEditing(true)}
-        className="focus-ring fixed bottom-24 right-6 z-40 inline-flex items-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-medium text-background shadow-card transition hover:-translate-y-px lg:bottom-8"
-      >
-        <Pencil className="h-4 w-4" />
-        Edit
-      </button>
-      ) : null}
-
-      {ownerView ? (
-      <EntryForm
-        open={editing}
-        mode="edit"
-        entry={entry}
-        onClose={() => setEditing(false)}
-        onSubmit={async (payload) => {
-          await updateMutation.mutateAsync(payload);
-          setEditing(false);
-        }}
-      />
-      ) : null}
-
-      <Modal
-        open={Boolean(shareTarget)}
-        onClose={() => {
-          setShareTarget(null);
-          setSharePassword('');
-          setGeneratedLink('');
-        }}
-      >
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Protected share link</p>
-            <h3 className="font-heading text-2xl text-textPrimary">{shareTarget?.label}</h3>
-            <p className="text-sm text-textMuted">
-              Create a localhost link for this document only. The recipient will need the password before the download button appears.
-            </p>
           </div>
+        )}
 
-          <Input
-            label="Link password"
-            type="password"
-            value={sharePassword}
-            onChange={(event) => setSharePassword(event.target.value)}
-            placeholder="Minimum 4 characters"
-          />
+        {/* Notes / Data Section */}
+        {(entry.notes || entry.data) && (
+          <div className="rounded-xl border border-line bg-panel p-6 shadow-soft md:col-span-2">
+            <h3 className="mb-4 text-lg font-semibold text-textPrimary">Secure Notes</h3>
+            <div className="rounded-lg border border-line bg-surface-soft p-4">
+              <p className="whitespace-pre-wrap text-sm text-textPrimary leading-relaxed">
+                {entry.notes || entry.data}
+              </p>
+            </div>
+          </div>
+        )}
 
-          {generatedLink ? (
-            <Input
-              label="Generated localhost link"
-              value={generatedLink}
-              readOnly
-              rightAdornment={
-                <button
-                  type="button"
-                  className="focus-ring rounded-full p-1 text-textMuted transition hover:text-brand"
-                  aria-label="Copy share link"
-                  onClick={async () => {
-                    if (await copyToClipboard(generatedLink)) toast.success('Share link copied');
-                  }}
+        {/* Attachments Section */}
+        {entry.filePath && entry.filePath.length > 0 && (
+          <div className="rounded-xl border border-line bg-panel p-6 shadow-soft md:col-span-2">
+            <h3 className="mb-4 text-lg font-semibold text-textPrimary">Attachments</h3>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+              {entry.filePath.map((path: string, index: number) => (
+                <a 
+                  key={index} 
+                  href={getFileUrl(path)}
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="flex items-center justify-between rounded-lg border border-line bg-surface-soft p-3 transition-colors hover:border-brand group"
                 >
-                  <Copy className="h-4 w-4" />
-                </button>
-              }
-            />
-          ) : null}
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <File className="h-5 w-5 text-brand shrink-0" />
+                    <span className="truncate text-sm text-textPrimary group-hover:text-brand">
+                      Attachment {index + 1}
+                    </span>
+                  </div>
+                  <ExternalLink className="h-4 w-4 text-textMuted group-hover:text-brand shrink-0" />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            {generatedLink ? (
-              <Button type="button" variant="secondary" onClick={() => window.open(generatedLink, '_blank', 'noopener,noreferrer')}>
-                Open link
-              </Button>
-            ) : null}
-            <Button
-              type="button"
-              variant="ghost"
+        {/* Active Share Links Section */}
+        <div className="rounded-xl border border-line bg-panel p-6 shadow-soft md:col-span-2">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-textPrimary">Active Share Links</h3>
+            <button 
               onClick={() => {
-                setShareTarget(null);
-                setSharePassword('');
-                setGeneratedLink('');
-              }}
-            >
-              Close
-            </Button>
-            <Button
-              type="button"
-              loading={createShareLinkMutation.isPending}
-              onClick={async () => {
-                if (!shareTarget) return;
-
-                try {
-                  const payload = await createShareLinkMutation.mutateAsync({
-                    filePath: shareTarget.filePath,
-                    password: sharePassword
-                  });
-
-                  setGeneratedLink(payload.data.link);
-                } catch (error) {
-                  const message = error instanceof Error ? error.message : 'Unable to create share link';
-                  toast.error(message);
-                }
-              }}
-            >
-              Generate link
-            </Button>
-          </div>
-        </div>
-      </Modal>
-    </div>
-  );
-}
-
-function DetailRow({
-  label,
-  value,
-  action,
-  multiline = false
-}: {
-  label: string;
-  value?: string;
-  action?: ReactNode;
-  multiline?: boolean;
-}) {
-  return (
-    <div className="space-y-2 border-b border-line/70 pb-5 last:border-none last:pb-0">
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-xs uppercase tracking-[0.22em] text-textMuted">{label}</p>
-        {action}
-      </div>
-      <div className={multiline ? 'rounded-lg bg-surface p-4 text-sm leading-7 text-textPrimary' : 'text-lg font-medium text-textPrimary'}>
-        {value || 'Not provided'}
-      </div>
-    </div>
-  );
-}
-
-function MetaItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg bg-surface-soft p-4">
-      <p className="text-xs uppercase tracking-[0.2em] text-textMuted">{label}</p>
-      <p className="mt-2 text-sm font-medium text-textPrimary">{value}</p>
-    </div>
-  );
-}
-
-function AttachmentCard({
-  entryId,
-  fileUrl,
-  index,
-  downloading,
-  onDownloadStateChange,
-  onShare
-}: {
-  entryId: string;
-  fileUrl: string;
-  index: number;
-  downloading: boolean;
-  onDownloadStateChange: (active: boolean) => void;
-  onShare: () => void;
-}) {
-  const token = useAuthStore((state) => state.token);
-  const [kind, setKind] = useState<AttachmentKind>(() => getAttachmentKind(fileUrl));
-  const [previewUrl, setPreviewUrl] = useState('');
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const label = `Attachment ${index + 1}`;
-  const image = kind === 'image';
-  const pdf = kind === 'pdf';
-  const downloadLabel = pdf ? 'Download PDF' : image ? 'Download image' : 'Download file';
-  const previewEndpoint = `/api/vault/${entryId}/attachments/${index}/preview`;
-
-  async function loadPreview() {
-    if (!token) {
-      throw new Error('Please log in again.');
-    }
-
-    setPreviewLoading(true);
-
-    try {
-      const { contentType, objectUrl } = await fetchProtectedResourceBlobUrl(previewEndpoint, {
-        headers: authHeaders(token)
-      });
-      const resolvedKind = getAttachmentKindFromContentType(contentType) || getAttachmentKind(fileUrl);
-
-      setKind(resolvedKind);
-      if (resolvedKind === 'file') {
-        setPreviewUrl((current) => {
-          if (current) {
-            URL.revokeObjectURL(current);
-          }
-          return '';
-        });
-      } else {
-        setPreviewUrl((current) => {
-          if (current) {
-            URL.revokeObjectURL(current);
-          }
-          return objectUrl;
-        });
-      }
-
-      return {
-        objectUrl,
-        kind: resolvedKind
-      };
-    } finally {
-      setPreviewLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    if (!token) {
-      setPreviewUrl((current) => {
-        if (current) {
-          URL.revokeObjectURL(current);
-        }
-        return '';
-      });
-      return;
-    }
-
-    let active = true;
-    let loadedObjectUrl = '';
-
-    loadPreview()
-      .then(({ objectUrl, kind: resolvedKind }) => {
-        if (!active) {
-          URL.revokeObjectURL(objectUrl);
-          return;
-        }
-
-        loadedObjectUrl = objectUrl;
-
-        if (resolvedKind === 'file') {
-          URL.revokeObjectURL(objectUrl);
-        }
-      })
-      .catch(() => {
-        if (!active) return;
-        setPreviewUrl((current) => {
-          if (current) {
-            URL.revokeObjectURL(current);
-          }
-          return '';
-        });
-      });
-
-    return () => {
-      active = false;
-      if (loadedObjectUrl) {
-        URL.revokeObjectURL(loadedObjectUrl);
-      }
-    };
-  }, [fileUrl, previewEndpoint, token]);
-
-  return (
-    <div className="group rounded-xl border border-line bg-surface-soft p-3 transition hover:border-brand/40 hover:bg-surface-raised">
-      <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand">
-          {image ? <FileImage className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-textPrimary">{label}</p>
-          <p className="mt-1 text-xs text-textMuted">
-            {image ? 'Image attachment' : pdf ? 'PDF document' : 'Stored attachment'}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={async () => {
-              let previewWindow: Window | null = null;
-
-              try {
-                if (previewUrl) {
-                  window.open(previewUrl, '_blank', 'noopener,noreferrer');
+                if (!entry.filePath || entry.filePath.length === 0) {
+                  toast.error('You must have at least one attachment to create a share link.');
                   return;
                 }
+                setSelectedFile(entry.filePath[0]);
+                setIsSharing(!isSharing);
+              }}
+              className="text-sm font-medium text-brand hover:underline"
+            >
+              {isSharing ? 'Cancel' : '+ Generate New Link'}
+            </button>
+          </div>
+          
+          {/* ✨ NEW: Inline form to collect the password */}
+          {isSharing && (
+            <div className="mb-6 rounded-lg border border-line bg-surface-soft p-4">
+              <h4 className="mb-3 text-sm font-semibold text-textPrimary">Create Secure Link</h4>
+              <div className="space-y-4">
+                {entry.filePath && entry.filePath.length > 1 && (
+                  <div>
+                    <label className="mb-1 block text-xs text-textMuted">Select File to Share</label>
+                    <select
+                      value={selectedFile}
+                      onChange={(e) => setSelectedFile(e.target.value)}
+                      className="w-full rounded-md border border-line bg-panel p-2 text-sm text-textPrimary outline-none focus:border-brand"
+                    >
+                      {entry.filePath.map((path: string, i: number) => (
+                        <option key={i} value={path}>Attachment {i + 1}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div>
+                  <label className="mb-1 block text-xs text-textMuted">Set Link Password (min 4 chars)</label>
+                  <input
+                    type="password"
+                    value={sharePassword}
+                    onChange={(e) => setSharePassword(e.target.value)}
+                    placeholder="Enter a secure password..."
+                    className="w-full rounded-md border border-line bg-panel p-2 text-sm text-textPrimary outline-none focus:border-brand"
+                  />
+                </div>
+                <button
+                  onClick={handleCreateLink}
+                  disabled={createLinkMutation.isPending}
+                  className="w-full rounded-md bg-brand py-2 text-sm font-medium text-white transition hover:bg-brand/90 disabled:opacity-50"
+                >
+                  {createLinkMutation.isPending ? 'Generating...' : 'Generate Share Link'}
+                </button>
+              </div>
+            </div>
+          )}
 
-                previewWindow = window.open('', '_blank', 'noopener,noreferrer');
-
-                const loadedPreview = await loadPreview();
-
-                if (loadedPreview.kind === 'file') {
-                  previewWindow?.close();
-                  await downloadProtectedResource(
-                    `/api/vault/${entryId}/attachments/${index}/download`,
-                    label.toLowerCase().replace(/\s+/g, '-'),
-                    {
-                      headers: authHeaders(token)
-                    }
-                  );
-                  toast.success(`${downloadLabel} ready`);
-                  return;
-                }
-
-                if (previewWindow) {
-                  previewWindow.location.href = loadedPreview.objectUrl;
-                } else {
-                  window.open(loadedPreview.objectUrl, '_blank', 'noopener,noreferrer');
-                }
-              } catch (error) {
-                previewWindow?.close();
-                const message = error instanceof Error ? error.message : 'Unable to open attachment';
-                toast.error(message);
-              }
-            }}
-            className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-surface-raised hover:text-brand"
-            aria-label={`Open ${label}`}
-          >
-            <ExternalLink className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={onShare}
-            className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-surface-raised hover:text-brand"
-            aria-label={`Share ${label}`}
-          >
-            <Share2 className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={async () => {
-              try {
-                onDownloadStateChange(true);
-                await downloadProtectedResource(
-                  `/api/vault/${entryId}/attachments/${index}/download`,
-                  label.toLowerCase().replace(/\s+/g, '-'),
-                  {
-                    headers: authHeaders(token)
-                  }
-                );
-                toast.success(`${downloadLabel} ready`);
-              } catch (error) {
-                const message = error instanceof Error ? error.message : 'Download failed';
-                toast.error(message);
-              } finally {
-                onDownloadStateChange(false);
-              }
-            }}
-            disabled={downloading}
-            className="focus-ring rounded-full p-2 text-textMuted transition hover:bg-surface-raised hover:text-brand disabled:cursor-not-allowed disabled:opacity-60"
-            aria-label={`${downloadLabel} for ${label}`}
-          >
-            <Download className="h-4 w-4" />
-          </button>
+          {shareLinks.length === 0 ? (
+            <div className="rounded-lg border border-line bg-surface-soft p-4 text-center">
+              <p className="text-sm text-textMuted">No active share links for this entry.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {shareLinks.map((link: any, index: number) => (
+                <div key={index} className="flex flex-col gap-2 rounded-lg border border-line bg-surface-soft p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <LinkIcon className="h-5 w-5 text-brand shrink-0" />
+                    <div>
+                      <p className="truncate text-sm font-medium text-textPrimary">Secure Link {index + 1}</p>
+                      <p className="text-xs text-textMuted">
+                        {link.expiresAt ? `Expires: ${new Date(link.expiresAt).toLocaleDateString()}` : 'Never expires'}
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => copyToClipboard(`http://localhost:5173/shared/${link.shareId || link.urlToken}`, 'Share Link')} 
+                    className="flex items-center gap-2 rounded-md bg-surface-raised px-3 py-1.5 text-xs font-medium text-textPrimary transition hover:text-brand"
+                  >
+                    <Copy className="h-3 w-3" /> Copy URL
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
 
-      {image ? (
-        previewUrl ? (
-          <img src={previewUrl} alt={label} className="mt-3 h-32 w-full rounded-lg border border-line/70 object-cover" />
-        ) : (
-          <div className="mt-3 rounded-lg border border-dashed border-line/70 bg-surface-muted px-4 py-6 text-sm text-textMuted">
-            Image preview unavailable.
-          </div>
-        )
-      ) : null}
-
-      {pdf ? (
-        previewUrl ? (
-          <div className="mt-3 overflow-hidden rounded-lg border border-line/70 bg-surface-raised">
-            <iframe src={previewUrl} title={`${label} preview`} className="h-72 w-full" />
-          </div>
-        ) : (
-          <div className="mt-3 rounded-lg border border-dashed border-line/70 bg-surface-muted px-4 py-6 text-sm text-textMuted">
-            PDF preview unavailable.
-          </div>
-        )
-      ) : null}
-
-      <div className="mt-3 flex items-center gap-3 text-xs text-textMuted">
-        <span>{downloadLabel}</span>
-        {previewLoading ? <span>Loading preview...</span> : null}
-        {downloading ? <span>Downloading...</span> : null}
       </div>
     </div>
   );
-}
+};

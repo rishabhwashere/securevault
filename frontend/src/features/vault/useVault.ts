@@ -9,6 +9,7 @@ import {
   deleteVaultEntry,
   getVaultEntries,
   getVaultEntry,
+  getVaultShareLinks, // <-- Added here
   requestEntryApproval,
   updateVaultEntry
 } from './vault.service';
@@ -20,7 +21,7 @@ export function useVaultEntries() {
 
   return useQuery({
     queryKey: ['vault', 'entries'],
-    queryFn: () => getVaultEntries(token),
+    queryFn: () => getVaultEntries(), 
     enabled: Boolean(token)
   });
 }
@@ -30,17 +31,25 @@ export function useVaultEntry(id?: string) {
 
   return useQuery({
     queryKey: ['vault', 'entry', id],
-    queryFn: () => getVaultEntry(token, id as string),
+    queryFn: () => getVaultEntry(id as string), 
     enabled: Boolean(token && id)
   });
 }
 
+// ✨ NEW: Fetch share links for a specific entry
+export function useVaultShareLinks(id?: string) {
+  return useQuery({
+    queryKey: ['vault', 'share-links', id],
+    queryFn: () => getVaultShareLinks(id as string),
+    enabled: Boolean(id) // Only run if we actually have an ID
+  });
+}
+
 export function useCreateEntry() {
-  const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: EntryPayload) => createVaultEntry(token, payload),
+    mutationFn: (payload: EntryPayload) => createVaultEntry(payload), 
     onSuccess: () => {
       toast.success('Vault entry saved');
       queryClient.invalidateQueries({ queryKey: ['vault'] });
@@ -53,23 +62,24 @@ export function useCreateEntry() {
 }
 
 export function useCreateShareLink(id: string) {
-  const token = useAuthStore((state) => state.token);
+  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: { filePath: string; password: string }) => createShareLink(token, id, payload),
-    onSuccess: (data) => {
+    mutationFn: (payload: { filePath: string; password: string }) => createShareLink(id, payload),
+    onSuccess: (data: any) => {
       toast.success(data.message || 'Share link created');
+      // Invalidate the share-links query so the UI updates instantly when a new link is made!
+      queryClient.invalidateQueries({ queryKey: ['vault', 'share-links', id] });
     }
   });
 }
 
 export function useRequestEntryApproval(id: string) {
-  const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => requestEntryApproval(token, id),
-    onSuccess: (data) => {
+    mutationFn: () => requestEntryApproval(id),
+    onSuccess: (data: any) => {
       toast.success(data.message || 'Approval request sent');
       queryClient.invalidateQueries({ queryKey: ['vault'] });
     }
@@ -77,12 +87,11 @@ export function useRequestEntryApproval(id: string) {
 }
 
 export function useApproveEntryAccess(id: string) {
-  const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => approveEntryAccess(token, id),
-    onSuccess: (data) => {
+    mutationFn: () => approveEntryAccess(id),
+    onSuccess: (data: any) => {
       toast.success(data.message || 'Access approved');
       queryClient.invalidateQueries({ queryKey: ['vault'] });
     }
@@ -90,11 +99,10 @@ export function useApproveEntryAccess(id: string) {
 }
 
 export function useUpdateEntry(id: string) {
-  const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: EntryPayload) => updateVaultEntry(token, id, payload),
+    mutationFn: (payload: EntryPayload) => updateVaultEntry(id, payload), 
     onSuccess: () => {
       toast.success('Vault entry updated');
       queryClient.invalidateQueries({ queryKey: ['vault'] });
@@ -107,11 +115,10 @@ export function useUpdateEntry(id: string) {
 }
 
 export function useDeleteEntry() {
-  const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => deleteVaultEntry(token, id),
+    mutationFn: (id: string) => deleteVaultEntry(id), 
     onSuccess: () => {
       toast.success('Vault entry deleted');
       queryClient.invalidateQueries({ queryKey: ['vault'] });

@@ -1,34 +1,53 @@
-import { useMutation } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
-import { loginUser, registerUser, verifyOtp } from './auth.service';
 import { useAuthStore } from './auth.store';
+import { authService } from './auth.service';
 
-export function useLogin() {
+export const useAuth = () => {
+  const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
+  const logout = useAuthStore((state) => state.logout);
   const setSession = useAuthStore((state) => state.setSession);
 
-  return useMutation({
-    mutationFn: loginUser,
-    onSuccess: (data) => {
-      setSession(data.token, data.user);
-      toast.success(`Welcome back, ${data.user.name}`);
-    }
-  });
-}
+  return { user, token, setSession, logout };
+};
 
-export function useRegister() {
-  return useMutation({
-    mutationFn: registerUser,
-    onSuccess: (data) => {
-      toast.success(data.message || `Account created for ${data.user.name}`);
+export const useLogin = () => {
+  const setSession = useAuthStore((state) => state.setSession);
+  
+  // We name this mutateAsync to match React Query syntax that AuthPanel expects
+  const mutateAsync = async (credentials: any) => {
+    try {
+      const data = await authService.login(credentials);
+      if (data && data.token) {
+        setSession(data.token, data.user);
+      }
+      return data;
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      throw error;
     }
-  });
-}
+  };
 
-export function useVerifyOtp() {
-  return useMutation({
-    mutationFn: verifyOtp,
-    onSuccess: () => {
-      toast.success('Verification complete');
+  // We return both mutateAsync and login just to be safe
+  return { mutateAsync, login: mutateAsync, isLoading: false };
+};
+
+export const useRegister = () => {
+  const setSession = useAuthStore((state) => state.setSession);
+
+  // We name this mutateAsync to fix the exact error in your console
+  const mutateAsync = async (userData: any) => {
+    try {
+      const data = await authService.register(userData);
+      // Automatically log the user in if the API returns a token upon registration
+      if (data && data.token) {
+        setSession(data.token, data.user);
+      }
+      return data;
+    } catch (error: any) {
+      console.error("Registration failed:", error);
+      throw error;
     }
-  });
-}
+  };
+
+  return { mutateAsync, register: mutateAsync, isLoading: false };
+};

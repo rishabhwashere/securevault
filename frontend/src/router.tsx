@@ -7,6 +7,8 @@ import { DashboardPage } from '@/pages/Dashboard';
 import { EntryDetailPage } from '@/pages/EntryDetail';
 import { ProfilePage } from '@/pages/Profile';
 import { SharedLinkPage } from '@/pages/SharedLink';
+import NomineeLogin from '@/pages/NomineeLogin'; 
+import { NomineePage } from '@/pages/NomineePage'; // ✨ 1. Imported the protected Nominee management page
 
 function AnimatedRouteOutlet() {
   const location = useLocation();
@@ -42,6 +44,11 @@ export const router = createBrowserRouter([
     element: <AuthPage />
   },
   {
+    // Public Nominee Login route
+    path: '/nominee-login',
+    element: <NomineeLogin /> 
+  },
+  {
     path: '/shared/:shareId',
     element: <SharedLinkPage />
   },
@@ -66,6 +73,11 @@ export const router = createBrowserRouter([
           {
             path: '/vault/profile',
             element: <ProfilePage />
+          },
+          // ✨ 2. Added the protected Nominee page to your dashboard routes
+          {
+            path: '/nominee',
+            element: <NomineePage />
           }
         ]
       }

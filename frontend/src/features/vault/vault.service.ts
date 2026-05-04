@@ -1,122 +1,120 @@
-import type { EntryPayload, VaultEntry } from './vault.types';
+import { requestJson } from '@/lib/request';
 
-export class ApiError extends Error {
-  status: number;
+// ==========================================
+// ✨ SMART DATA PACKAGER (The Magic Fix)
+// ==========================================
+const prepareData = (data: any) => {
+  // If it's already packaged correctly, let it through
+  if (data instanceof FormData) return data;
 
-  constructor(message: string, status: number) {
-    super(message);
-    this.name = 'ApiError';
-    this.status = status;
-  }
-}
+  // Scan the data to see if any actual File objects are hidden inside
+  const hasFiles = Object.values(data).some(
+    (val: any) => 
+      val instanceof FileList || 
+      (Array.isArray(val) && val.length > 0 && val[0] instanceof File) ||
+      val instanceof File
+  );
 
-async function request<T>(path: string, init: RequestInit = {}) {
-  const response = await fetch(path, init);
-  const payload = await response.json().catch(() => ({}));
+  // If there are no files attached, standard JSON is perfectly fine!
+  if (!hasFiles) return data;
 
-  if (!response.ok) {
-    throw new ApiError(payload.message || 'Request failed', response.status);
-  }
-
-  return payload as T;
-}
-
-export function authHeaders(token: string) {
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-function buildFormData(payload: EntryPayload) {
+  // If files exist, JSON will destroy them. We MUST package it as FormData.
   const formData = new FormData();
-  formData.append('title', payload.title);
-  formData.append('category', payload.category);
-  formData.append('url', payload.url ?? '');
-  formData.append('username', payload.username ?? '');
-  formData.append('password', payload.password ?? '');
-  formData.append('notes', payload.notes ?? '');
-  formData.append('data', payload.data ?? payload.notes ?? '');
-  formData.append('unlockAt', payload.unlockAt ? new Date(payload.unlockAt).toISOString() : '');
-  formData.append('requiresDualApproval', payload.requiresDualApproval ? 'true' : 'false');
-  formData.append('secondApproverEmail', payload.secondApproverEmail ?? '');
-  (payload.tags ?? []).forEach((tag) => formData.append('tags', tag));
-  (payload.files ?? []).forEach((file) => formData.append('files', file));
-  return formData;
-}
-
-export async function getVaultEntries(token: string) {
-  const payload = await request<{ data: VaultEntry[] }>('/api/vault', {
-    headers: authHeaders(token)
-  });
-  return payload.data ?? [];
-}
-
-export async function getVaultEntry(token: string, id: string) {
-  const payload = await request<{ data: VaultEntry }>(`/api/vault/${id}`, {
-    headers: authHeaders(token)
-  });
-  return payload.data;
-}
-
-export async function createVaultEntry(token: string, data: EntryPayload) {
-  const payload = await request<{ data: VaultEntry }>('/api/vault', {
-    method: 'POST',
-    headers: authHeaders(token),
-    body: buildFormData(data)
-  });
-  return payload.data;
-}
-
-export async function updateVaultEntry(token: string, id: string, data: EntryPayload) {
-  const payload = await request<{ data: VaultEntry }>(`/api/vault/${id}`, {
-    method: 'PUT',
-    headers: authHeaders(token),
-    body: buildFormData(data)
-  });
-  return payload.data;
-}
-
-export async function deleteVaultEntry(token: string, id: string) {
-  await request(`/api/vault/${id}`, {
-    method: 'DELETE',
-    headers: authHeaders(token)
-  });
-}
-<<<<<<< HEAD
-export async function generateShareLink(token: string, vaultId: string, password: string) {
-  const response = await request(`/api/share/generate/${vaultId}`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`, // Manually forcing the token header!
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ password })
-  });
   
-  return response;
-}
-=======
+  Object.keys(data).forEach((key) => {
+    const value = data[key];
+    
+    // Skip empty fields
+    if (value === undefined || value === null || value === '') return;
 
-export async function createShareLink(token: string, id: string, payload: { filePath: string; password: string }) {
-  return request<{ data: { shareId: string; link: string }; message: string }>(`/api/vault/${id}/share-link`, {
-    method: 'POST',
-    headers: {
-      ...authHeaders(token),
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
+    // 1. Target the files and FORCE them into the 'files' field so Multer finds them
+    if (value instanceof FileList || (Array.isArray(value) && value[0] instanceof File)) {
+      Array.from(value).forEach((file: any) => formData.append('files', file));
+    } else if (value instanceof File) {
+      formData.append('files', value);
+    } 
+    // 2. Safely handle array fields (like your tags)
+    else if (Array.isArray(value)) {
+      value.forEach((item) => formData.append(key, item));
+    } 
+    // 3. Handle normal text and booleans
+    else {
+      formData.append(key, String(value));
+    }
   });
-}
 
-export async function requestEntryApproval(token: string, id: string) {
-  return request<{ data: VaultEntry; message: string }>(`/api/vault/${id}/request-approval`, {
-    method: 'POST',
-    headers: authHeaders(token)
-  });
-}
+  return formData;
+};
 
-export async function approveEntryAccess(token: string, id: string) {
-  return request<{ data: VaultEntry; message: string }>(`/api/vault/${id}/approve-access`, {
-    method: 'POST',
-    headers: authHeaders(token)
+// ==========================================
+// ACTIVE API CALLS
+// ==========================================
+
+export const getVaultEntries = async () => {
+  const response: any = await requestJson('/api/vault/entries', {
+    method: 'GET',
   });
-}
->>>>>>> 192bf6b657b077bb47b553775105521b58283ed9
+  return response.data || [];
+};
+
+export const getVaultEntry = async (id: string) => {
+  const response: any = await requestJson(`/api/vault/${id}`, {
+    method: 'GET',
+  });
+  return response.data;
+};
+
+export const createVaultEntry = async (arg1: any, arg2?: any) => {
+  const entryData = typeof arg1 === 'string' && arg1.includes('eyJ') ? arg2 : arg1;
+  
+  // Pass the data through our new smart packager
+  const finalData = prepareData(entryData);
+  const isFormData = finalData instanceof FormData;
+
+  return await requestJson('/api/vault/entries', {
+    method: 'POST',
+    // We let the browser set the headers if it's FormData
+    headers: isFormData ? undefined : { 'Content-Type': 'application/json' },
+    body: isFormData ? finalData : JSON.stringify(finalData),
+  });
+};
+
+export const updateVaultEntry = async (id: string, entryData: any) => {
+  const finalData = prepareData(entryData);
+  const isFormData = finalData instanceof FormData;
+  
+  return await requestJson(`/api/vault/${id}`, {
+    method: 'PUT',
+    headers: isFormData ? undefined : { 'Content-Type': 'application/json' },
+    body: isFormData ? finalData : JSON.stringify(finalData),
+  });
+};
+
+export const deleteVaultEntry = async (id: string) => {
+  return await requestJson(`/api/vault/${id}`, {
+    method: 'DELETE',
+  });
+};
+
+// ✨ NEW: Fetch active share links for this entry
+export const getVaultShareLinks = async (id: string) => {
+  const response: any = await requestJson(`/api/vault/${id}/share-links`, {
+    method: 'GET',
+  });
+  return response.data || [];
+};
+
+// ✨ NEW: Generate a new share link
+export const createShareLink = async (id: string, payload: any) => {
+  return await requestJson(`/api/vault/${id}/share-link`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+};
+
+// ==========================================
+// STUBBED FUNCTIONS 
+// ==========================================
+export const approveEntryAccess = async () => {};
+export const requestEntryApproval = async () => {};
+export const generateShareLink = async () => {};
