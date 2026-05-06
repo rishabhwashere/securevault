@@ -1,14 +1,8 @@
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs'); 
-// Updated import to use the socket helper file
 const { getIO, onlineUsers } = require('../socket'); 
 const { sendNomineeAlertEmail } = require('../Utils/email');
-
-// ==========================================
-// STANDARD AUTHENTICATION
-// ==========================================
-
 const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -60,41 +54,27 @@ const loginUser = async (req, res) => {
   }
 };
 
-// ==========================================
-// NOMINEE AUTHENTICATION
-// ==========================================
-
-// 1. Nominee requests access
 const requestNomineeLogin = async (req, res) => {
   const { ownerEmail, nomineeEmail, nomineePin, deviceInfo } = req.body;
 
   try {
     const user = await User.findOne({ email: ownerEmail });
-    
-    // Ensure user exists and nominee credentials match
     if (!user || !user.nominee || user.nominee.email !== nomineeEmail || user.nominee.pin !== nomineePin) {
       return res.status(401).json({ message: 'Invalid nominee credentials' });
     }
-
-    // Set pending state in database
     user.activeLoginRequest = {
       isPending: true,
       deviceInfo: deviceInfo || 'Unknown Device',
       timestamp: new Date()
     };
     await user.save();
-
-    // Check if main user is currently online via the imported onlineUsers map
     if (onlineUsers && onlineUsers.has(user._id.toString())) {
-      // Get the current Socket instance safely
       const io = getIO(); 
-      // User is online, emit real-time alert
       io.to(user._id.toString()).emit('nominee_login_attempt', {
         deviceInfo: user.activeLoginRequest.deviceInfo,
         timestamp: user.activeLoginRequest.timestamp
       });
     } else {
-      // User is offline, send email
       await sendNomineeAlertEmail(user.email, user.activeLoginRequest.deviceInfo);
     }
 
@@ -103,8 +83,6 @@ const requestNomineeLogin = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-// 2. Nominee polls for status
 const checkNomineeStatus = async (req, res) => {
   const { ownerId } = req.params;
 
@@ -115,14 +93,10 @@ const checkNomineeStatus = async (req, res) => {
     if (user.activeLoginRequest && user.activeLoginRequest.isPending) {
       return res.status(202).json({ status: 'pending' });
     }
-
-    // Check if access was granted
     if (user.nomineeApproved) {
-        // Reset approval state for security
         user.nomineeApproved = false;
         await user.save();
 
-        // Generate Nominee JWT
         const token = jwt.sign(
             { id: user._id, role: 'nominee' }, 
             process.env.JWT_SECRET, 
@@ -137,22 +111,19 @@ const checkNomineeStatus = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-// 3. Main user approves or denies (Requires standard auth middleware)
 const resolveNomineeLogin = async (req, res) => {
-  const { action } = req.body; // Expects 'allow' or 'deny'
-  const userId = req.user.id; // Comes from your auth middleware
+  const { action } = req.body; 
+  const userId = req.user.id; 
 
   try {
     const user = await User.findById(userId);
     
-    // Clear the pending request
     if (user.activeLoginRequest) {
       user.activeLoginRequest.isPending = false;
     }
     
     if (action === 'allow') {
-        user.nomineeApproved = true; // Temporary flag for the polling endpoint
+        user.nomineeApproved = true; 
     } else {
         user.nomineeApproved = false;
     }

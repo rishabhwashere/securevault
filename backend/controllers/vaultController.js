@@ -188,7 +188,7 @@ const createVaultEntry = async (req, res) => {
       data: formatVaultEntry(populatedEntry, { userId: req.user._id })
     });
   } catch (error) {
-    // THE FIX: Log crash
+    
     console.error("Vault Fetch Crash [createVaultEntry]:", error);
     res.status(error.statusCode || 500).json({ success: false, message: error.message });
   }
@@ -246,7 +246,7 @@ const getAllVaultEntries = async (req, res) => {
       )
     });
   } catch (error) {
-    // THE FIX: Log the crash that is causing the dashboard 500 error!
+    
     console.error("Vault Fetch Crash [getAllVaultEntries]:", error);
     res.status(error.statusCode || 500).json({ success: false, message: error.message });
   }

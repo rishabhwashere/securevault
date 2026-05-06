@@ -12,8 +12,6 @@ const { pipeRemoteDocument, resolveDocumentKind } = require('../Utils/remoteDocu
 function decryptFileList(filePaths = []) {
   return filePaths.map((filePath) => decrypt(filePath));
 }
-
-// Helper to safely find files regardless of OS
 const getSafeLocalPath = (dbFilePath) => {
   if (path.isAbsolute(dbFilePath)) return dbFilePath;
   let safePath = dbFilePath.replace(/\\/g, '/');
@@ -83,7 +81,6 @@ const getSharedLinkInfo = async (req, res) => {
     const sharedLink = await SharedLink.findOne({ shareId: req.params.shareId });
     if (!sharedLink) return res.status(404).json({ success: false, message: 'Share link not found' });
 
-    // ✨ RESTORED: Decrypt the string from the database!
     const filePath = decrypt(sharedLink.filePath);
 
     return res.status(200).json({
@@ -107,7 +104,6 @@ const verifySharedLinkPassword = async (req, res) => {
     const matches = await bcrypt.compare(password.trim(), sharedLink.passwordHash);
     if (!matches) return res.status(401).json({ success: false, message: 'Incorrect password' });
 
-    // ✨ RESTORED: Decrypt!
     const filePath = decrypt(sharedLink.filePath);
     
     const accessToken = jwt.sign(
@@ -179,7 +175,6 @@ const previewSharedDocument = async (req, res) => {
     const sharedLink = await SharedLink.findOne({ shareId: req.params.shareId });
     if (!sharedLink) return res.status(404).json({ success: false, message: 'Share link not found' });
 
-    // ✨ RESTORED: Decrypt!
     const filePath = decrypt(sharedLink.filePath);
 
     if (filePath.startsWith('http')) {

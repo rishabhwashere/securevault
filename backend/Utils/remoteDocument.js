@@ -27,7 +27,6 @@ async function fetchRemoteHeaders(filePath) {
       return response.headers;
     }
   } catch {
-    // Fall back to GET when HEAD is not supported.
   }
 
   try {

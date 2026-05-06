@@ -1,33 +1,58 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
 const connectDB = require('./config/db');
-const { initSocket } = require('./socket'); // Import the new helper
+const { initSocket } = require('./socket'); 
 
 const uploadRoutes = require('./routes/uploadRoutes');
 const authRoutes = require('./routes/authRoutes');
 const vaultRoutes = require('./routes/vaultRoutes');
-const userRoutes = require('./routes/UserRoutes');
+const userRoutes = require('./routes/userRoutes');
 const activityRoutes = require('./routes/activityRoutes');
 const sharedLinkRoutes = require('./routes/sharedLinkRoutes');
+const nomineeRoutes = require('./routes/nomineeRoutes');
 
 const app = express();
 const server = http.createServer(app); 
 
-// Initialize Socket.IO using the helper
 const io = initSocket(server); 
 
-const PORT = process.env.PORT || 3000;
-const frontendDistDir = path.join(__dirname, '..', 'frontend', 'dist');
-const nomineeRoutes = require('./routes/nomineeRoutes');
+// --- 1. PORT CONFIGURATION ---
+const PORT = process.env.PORT || 5000;
+
+// --- 2. CORS CONFIGURATION ---
+// This allows local Vite testing AND your deployed Vercel domain to talk to this API
+const allowedOrigins = [
+  'http://localhost:5173', 
+  'http://127.0.0.1:5173',
+  process.env.FRONTEND_URL // <-- You will add this in Render's Environment Variables later
+].filter(Boolean);
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], 
+  allowedHeaders: ['Content-Type', 'Authorization'] 
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(frontendDistDir));
+
+// Serve uploaded files statically (Useful for local testing, though Cloudinary handles production uploads)
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+
+// --- 3. API ROUTES ---
 app.use('/api/nominee', nomineeRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/vault', vaultRoutes);
+app.use('/api/activity', activityRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/shared', sharedLinkRoutes);
+app.use('/api/shared', require('./routes/sharedRoutes'));
 
 app.post('/api/test', (req, res) => {
   res.json({
@@ -48,42 +73,26 @@ app.get('/api', (req, res) => {
   });
 });
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/vault', vaultRoutes);
-app.use('/api/activity', activityRoutes);
-app.use('/api/upload', uploadRoutes);
-app.use('/api/shared', sharedLinkRoutes);
-app.use('/api/shared', require('./routes/sharedRoutes'));
-
-app.get('*', (req, res) => {
-  if (!fs.existsSync(frontendDistDir)) {
-    return res.status(503).json({
-      message: 'Frontend build not found. Run `npm run build` or `npm run dev:frontend`.'
-    });
-  }
-
-  res.sendFile(path.join(frontendDistDir, 'index.html'));
+// --- 4. ROOT ROUTE (Replaces the old React Dist serving) ---
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: 'VaultX Backend is Live and Ready!',
+    status: 'Active'
+  });
 });
 
+// --- 5. SERVER INITIALIZATION ---
 async function startServer() {
   try {
     const dbConnection = await connectDB();
 
     server.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+      console.log(`Server running on port ${PORT}`);
       console.log(`Connected database: ${dbConnection.name || 'MongoDB'}`);
-      console.log(`VaultX Home:    http://localhost:${PORT}/`);
-      console.log(`Auth Register: http://localhost:${PORT}/api/auth/register`);
-      console.log(`Auth Login:    http://localhost:${PORT}/api/auth/login`);
-      console.log(`Users API:     http://localhost:${PORT}/api/users`);
-      console.log(`Vault API:     http://localhost:${PORT}/api/vault`);
-      console.log(`Upload API:    http://localhost:${PORT}/api/upload`);
-      console.log(`Activity API:  http://localhost:${PORT}/api/activity`);
     });
+
   } catch (error) {
-    console.error(" CRITICAL SERVER CRASH:");
+    console.error("CRITICAL SERVER CRASH:");
     console.error(error);
     process.exit(1);
   }

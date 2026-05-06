@@ -30,7 +30,7 @@ const initSocket = (server) => {
   return io;
 };
 
-// This function allows controllers to get the 'io' instance safely
+
 const getIO = () => {
   if (!io) {
     throw new Error("Socket.io not initialized!");

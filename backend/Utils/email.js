@@ -2,7 +2,7 @@ const nodemailer = require('nodemailer');
 
 const sendNomineeAlertEmail = async (userEmail, deviceInfo) => {
   const transporter = nodemailer.createTransport({
-    service: 'gmail', // or your preferred service
+    service: 'gmail', 
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
@@ -12,7 +12,7 @@ const sendNomineeAlertEmail = async (userEmail, deviceInfo) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: userEmail,
-    subject: '🚨 VaultX Alert: Nominee Login Attempt',
+    subject: ' VaultX Alert: Nominee Login Attempt',
     html: `
       <h3>Someone is trying to access your VaultX account as a Nominee.</h3>
       <p><strong>Device/Location:</strong> ${deviceInfo}</p>

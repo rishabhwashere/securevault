@@ -1,20 +1,14 @@
 const express = require('express');
 const router = express.Router();
-
-// 1. ADD CURLY BRACES: This extracts the 'protect' function from the exported object
 const { protect } = require('../middleware/authMiddleware'); 
-
-// 2. Ensure your upload middleware is imported correctly
 const upload = require('../middleware/uploadMiddleware');    
 
-// 3. Keep your existing logic or use a controller function
 router.post('/', protect, upload.single('document'), (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ success: false, message: 'Please upload a file' });
         }
 
-        // Use the Cloudinary or local path provided by your middleware
         const uploadedUrl = req.file.secure_url || req.file.path || req.file.url;
 
         if (!uploadedUrl) {

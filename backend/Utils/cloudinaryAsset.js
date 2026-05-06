@@ -18,7 +18,6 @@ function parseStoredAsset(value) {
       return parsed;
     }
   } catch {
-    // Stored value is a plain URL; continue below.
   }
 
   return null;
