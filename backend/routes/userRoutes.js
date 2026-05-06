@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const {protect} = require('../middleware/authMiddleware');
+
+// FIX: Added curly braces around { protect }
+const { protect } = require('../middleware/authMiddleware'); 
 const { getAllUsers, getMe, updateMe } = require('../controllers/UserController');
 
 router.get('/', getAllUsers);
