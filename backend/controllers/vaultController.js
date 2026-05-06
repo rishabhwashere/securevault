@@ -1,10 +1,10 @@
 const Vault = require('../models/vault');
 const ActivityLog = require('../models/activitylog');
 const User = require('../models/user');
-const { decrypt, encrypt } = require('../Utils/encryption');
-const { enforceVaultUnlock } = require('../Utils/lockAccess');
-const { pipeRemoteDocument } = require('../Utils/remoteDocument');
-const { normalizeUnlockAt, isVaultLocked } = require('../Utils/timeLock');
+const { decrypt, encrypt } = require('../utils/encryption');
+const { enforceVaultUnlock } = require('../utils/lockAccess');
+const { pipeRemoteDocument } = require('../utils/remoteDocument');
+const { normalizeUnlockAt, isVaultLocked } = require('../utils/timeLock');
 
 const DUAL_ACCESS_WINDOW_MS = 10 * 60 * 1000;
 

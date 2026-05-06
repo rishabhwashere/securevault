@@ -2,7 +2,7 @@ const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs'); 
 const { getIO, onlineUsers } = require('../socket'); 
-const { sendNomineeAlertEmail } = require('../Utils/email');
+const { sendNomineeAlertEmail } = require('../utils/email');
 const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;

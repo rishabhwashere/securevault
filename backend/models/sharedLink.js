@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { encrypt } = require('../Utils/encryption');
+const { encrypt } = require('../utils/encryption');
 
 const sharedLinkSchema = new mongoose.Schema(
   {

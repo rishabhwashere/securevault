@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { encrypt } = require('../Utils/encryption');
+const { encrypt } = require('../utils/encryption');
 
 function encryptArray(values) {
   if (!Array.isArray(values)) {

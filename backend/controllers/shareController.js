@@ -2,7 +2,7 @@ const ShareLink = require('../models/ShareLink');
 const Vault = require('../models/vault');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
-const { decrypt } = require('../Utils/encryption');
+const { decrypt } = require('../utils/encryption');
 
 const generateShareLink = async (req, res) => {
   try {

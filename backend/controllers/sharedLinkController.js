@@ -5,9 +5,9 @@ const fs = require('fs');
 const path = require('path');
 const Vault = require('../models/vault');
 const SharedLink = require('../models/sharedLink');
-const { decrypt } = require('../Utils/encryption');
-const { enforceVaultUnlock } = require('../Utils/lockAccess');
-const { pipeRemoteDocument, resolveDocumentKind } = require('../Utils/remoteDocument');
+const { decrypt } = require('../utils/encryption');
+const { enforceVaultUnlock } = require('../utils/lockAccess');
+const { pipeRemoteDocument, resolveDocumentKind } = require('../utils/remoteDocument');
 
 function decryptFileList(filePaths = []) {
   return filePaths.map((filePath) => decrypt(filePath));
