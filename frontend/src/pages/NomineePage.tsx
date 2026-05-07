@@ -9,7 +9,7 @@ export function NomineePage() {
   const [nomineeEmail, setNomineeEmail] = useState('');
   const [nomineePin, setNomineePin] = useState(''); 
   const token = useAuthStore((state) => state.token);
-  const API_URL = 'http://localhost:5000/api/nominee'; 
+  const API_URL = '/api/nominee'; 
 
   useEffect(() => {
     const fetchNominee = async () => {

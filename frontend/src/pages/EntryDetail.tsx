@@ -45,7 +45,7 @@ export const EntryDetailPage = () => {
     if (!path) return '#';
     if (path.startsWith('http')) return path; 
     const cleanPath = path.replace(/\\/g, '/');
-    const baseUrl = 'http://localhost:5000'; 
+    const baseUrl = 'https://vaultx-o3nd.onrender.com'; 
     return `${baseUrl}/${cleanPath.startsWith('/') ? cleanPath.slice(1) : cleanPath}`;
   };
 
@@ -247,7 +247,7 @@ export const EntryDetailPage = () => {
                     </div>
                   </div>
                   <button 
-                    onClick={() => copyToClipboard(`http://localhost:5173/shared/${link.shareId || link.urlToken}`, 'Share Link')} 
+                    onClick={() => copyToClipboard(`${window.location.origin}/shared/${link.shareId || link.urlToken}`, 'Share Link')}
                     className="flex items-center gap-2 rounded-md bg-surface-raised px-3 py-1.5 text-xs font-medium text-textPrimary transition hover:text-brand"
                   >
                     <Copy className="h-3 w-3" /> Copy URL
