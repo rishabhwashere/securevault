@@ -7,7 +7,13 @@ const NomineeAlertModal = ({ userId }) => {
 
   useEffect(() => {
     
-    const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
+  import { io } from 'socket.io-client'; // Ensure this is at the top of the file
+
+
+const socket = io('https://vaultx-o3nd.onrender.com', {
+  transports: ['websocket'], 
+  withCredentials: true      
+});
     
     socket.emit('register_user', userId);
 
