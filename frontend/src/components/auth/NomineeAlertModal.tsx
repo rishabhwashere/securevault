@@ -1,19 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
-import {requestJson as request} from '../../lib/request'; 
+import { io } from 'socket.io-client'; // Only ONE import, at the top!
+import { requestJson as request } from '../../lib/request'; 
 
 const NomineeAlertModal = ({ userId }) => {
   const [alertData, setAlertData] = useState<any>(null);
 
   useEffect(() => {
-    
-  import { io } from 'socket.io-client'; // Ensure this is at the top of the file
-
-
-const socket = io('https://vaultx-o3nd.onrender.com', {
-  transports: ['websocket'], 
-  withCredentials: true      
-});
+    // We moved the import out of here, and just connect the socket!
+    const socket = io('https://vaultx-o3nd.onrender.com', {
+      transports: ['websocket'], 
+      withCredentials: true      
+    });
     
     socket.emit('register_user', userId);
 
