@@ -6,8 +6,12 @@ const onlineUsers = new Map();
 const initSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: "*", 
-      methods: ["GET", "POST"]
+      origin: [
+        "http://localhost:5173", 
+        "https://securevault-topaz.vercel.app"
+      ],
+      methods: ["GET", "POST"],
+      credentials: true
     }
   });
 
@@ -29,7 +33,6 @@ const initSocket = (server) => {
 
   return io;
 };
-
 
 const getIO = () => {
   if (!io) {
