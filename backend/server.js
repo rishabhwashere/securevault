@@ -25,11 +25,19 @@ const PORT = process.env.PORT || 5000;
 
 // --- 2. CORS CONFIGURATION ---
 // This allows local Vite testing AND your deployed Vercel domain to talk to this API
-const allowedOrigins = [
-  'http://localhost:5173', 
-  'http://127.0.0.1:5173',
-  process.env.FRONTEND_URL // <-- You will add this in Render's Environment Variables later
-].filter(Boolean);
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin, localhost, or ANY vercel.app domain
+    if (!origin || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1') || origin.includes('vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], 
+  allowedHeaders: ['Content-Type', 'Authorization'] 
+};
 
 app.use(cors({
   origin: allowedOrigins,
