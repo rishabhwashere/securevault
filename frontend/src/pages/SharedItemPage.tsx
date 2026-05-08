@@ -15,7 +15,7 @@ export function SharedItemPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/share/access/${token}`, {
+      const response = await fetch(`https://vaultx-o3nd.onrender.com/api/shared/access/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password })

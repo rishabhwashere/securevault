@@ -20,7 +20,7 @@ export default function NomineeLogin() {
     setStatus('pending'); 
     
     try {
-      const response = await fetch('/api/nominee/request-access', {
+      const response = await fetch('https://vaultx-o3nd.onrender.com/api/nominee/request-access', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formData })
@@ -45,7 +45,7 @@ export default function NomineeLogin() {
     if (status === 'pending' && ownerId) {
       interval = setInterval(async () => {
         try {
-          const response = await fetch(`/api/nominee/status/${ownerId}`);
+          const response = await fetch(`https://vaultx-o3nd.onrender.com/api/nominee/status/${ownerId}`);
           const res = await response.json();
           
           if (res.status === 'approved') {

@@ -9,8 +9,7 @@ export function NomineePage() {
   const [nomineeEmail, setNomineeEmail] = useState('');
   const [nomineePin, setNomineePin] = useState(''); 
   const token = useAuthStore((state) => state.token);
-  const API_URL = '/api/nominee'; 
-
+  const API_URL = 'https://vaultx-o3nd.onrender.com/api/nominee';
   useEffect(() => {
     const fetchNominee = async () => {
       try {
