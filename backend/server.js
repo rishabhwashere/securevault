@@ -23,8 +23,7 @@ const io = initSocket(server);
 // --- 1. PORT CONFIGURATION ---
 const PORT = process.env.PORT || 5000;
 
-// --- 2. CORS CONFIGURATION ---
-// This allows local Vite testing AND your deployed Vercel domain to talk to this API
+// --- 2. CORS CONFIGURATION (GOD MODE) ---
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin, localhost, or ANY vercel.app domain
@@ -39,12 +38,7 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'] 
 };
 
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], 
-  allowedHeaders: ['Content-Type', 'Authorization'] 
-}));
+app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -81,7 +75,7 @@ app.get('/api', (req, res) => {
   });
 });
 
-// --- 4. ROOT ROUTE (Replaces the old React Dist serving) ---
+// --- 4. ROOT ROUTE ---
 app.get('/', (req, res) => {
   res.status(200).json({
     message: 'VaultX Backend is Live and Ready!',
